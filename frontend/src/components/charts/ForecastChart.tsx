@@ -1,4 +1,4 @@
-﻿import {
+import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
@@ -48,7 +48,7 @@ export default function ForecastChart({ data }: Props) {
             tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)} />
           <Tooltip
             contentStyle={{ fontSize: 11, border: "1px solid var(--color-border)", borderRadius: 4 }}
-            formatter={(value: unknown, name: string) => [(Number(value) || 0).toLocaleString('en-IN'), name]}
+            formatter={(value: any, name: any) => [(Number(value) || 0).toLocaleString('en-IN'), String(name ?? "")]}
           />
           <Legend iconType="line" wrapperStyle={{ fontSize: 11 }} />
           {splitPeriod && <ReferenceLine x={splitPeriod} stroke="#e8601c" strokeDasharray="4 2" label={{ value: "Forecast →", position: "insideTopRight", fontSize: 10, fill: "#e8601c" }} />}

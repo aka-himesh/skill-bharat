@@ -1,0 +1,23 @@
+# Python generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Local database files
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/*.db-wal
+backend/data/*.db-shm
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+
+# Logs
+*.log

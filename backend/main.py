@@ -103,3 +103,8 @@ def root():
 @app.get("/health", include_in_schema=False)
 def health():
     return {"status": "ok"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=settings.BACKEND_PORT, reload=True)

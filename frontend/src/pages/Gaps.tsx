@@ -1,12 +1,15 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { mockGapRows, mockRanking } from "../mocks/data";
+import { useAuth } from "../context/AuthContext";
+import { useGaps, useRanking } from "../hooks/useApi";
 import { useFilters } from "../context/FilterContext";
+import { downloadAuthenticatedCsv, getGapsExportCsvUrl } from "../services/api";
 import DataTable from "../components/ui/DataTable";
 import SeverityBadge from "../components/ui/SeverityBadge";
 import ChartCard from "../components/ui/ChartCard";
 import GapBarChart from "../components/charts/GapBarChart";
+import LoginPage from "./LoginPage";
 import type { GapRow, RankingRow, SeverityBand } from "../types";
 import type { Column } from "../components/ui/DataTable";
 import { Download, TrendingUp, TrendingDown, Minus } from "lucide-react";
@@ -23,22 +26,63 @@ export default function Gaps() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { filters } = useFilters();
+  const { isLoggedIn } = useAuth();
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>("shortage_tab");
+
+  if (!isLoggedIn) return <LoginPage />;
+
+  const { data: gapsData, isLoading: gapsLoading } = useGaps({
+    state_id: filters.stateId ? Number(filters.stateId) : undefined,
+    district_id: filters.districtId ? Number(filters.districtId) : undefined,
+    sector_id: filters.sectorId ? Number(filters.sectorId) : undefined,
+  }, isLoggedIn);
+
+  const rankType = activeTab === "shortage_tab" ? "shortage" : "oversupply";
+  const { data: rankingData } = useRanking({
+    type: rankType,
+    limit: 20,
+    state_id: filters.stateId ? Number(filters.stateId) : undefined,
+  }, isLoggedIn);
 
   const shortage: SeverityBand[] = ["Critical Shortage", "Shortage"];
   const oversupply: SeverityBand[] = ["Critical Oversupply", "Oversupply"];
 
-  const filtered = mockGapRows.filter((r) => {
-    if (filters.stateId && r.stateId !== filters.stateId) return false;
-    if (filters.districtId && r.districtId !== filters.districtId) return false;
-    return true;
-  });
+  // Map backend gaps to UI format
+  const allRows: GapRow[] = (gapsData?.gaps ?? []).map((g, i) => ({
+    id: String(i),
+    ncoCode: g.nco_code,
+    tradeName: g.occupation_name,
+    sectorName: g.sector_name ?? "—",
+    stateId: String(g.district_id),
+    stateName: g.state_name,
+    districtId: String(g.district_id),
+    districtName: g.district_name,
+    demand: g.forecast_demand,
+    supply: g.forecast_supply,
+    gap: g.forecast_demand - g.forecast_supply,
+    gapPercent: g.gap_pct,
+    severity: g.gap_band as SeverityBand,
+    nsqfLevel: 0,
+    isAspirational: false,
+  }));
 
-  const tabData = filtered.filter((r) => activeTab === "shortage_tab" ? shortage.includes(r.severity) : oversupply.includes(r.severity));
+  const tabData = allRows.filter((r) =>
+    activeTab === "shortage_tab"
+      ? shortage.includes(r.severity)
+      : oversupply.includes(r.severity)
+  );
 
-  const rankData = mockRanking.filter((r) => activeTab === "shortage_tab"
-    ? shortage.includes(r.severity)
-    : oversupply.includes(r.severity));
+  // Map ranking data
+  const rankData: RankingRow[] = (rankingData?.ranking ?? []).map((r, i) => ({
+    rank: i + 1,
+    tradeName: r.occupation_name,
+    ncoCode: r.nco_code,
+    sectorName: r.sector_name ?? "—",
+    stateCount: 1,
+    avgGapPercent: r.avg_gap_pct,
+    severity: r.gap_band as SeverityBand,
+    trend: "stable" as const,
+  }));
 
   const gapCols: Column<GapRow>[] = [
     { key: "tradeName", header: t("table.trade"), sortable: true, width: "180px" },
@@ -50,7 +94,6 @@ export default function Gaps() {
     { key: "gap", header: t("table.gap"), sortable: true, align: "right", render: (r) => <span style={{ fontWeight: 700, color: r.gap > 0 ? "var(--color-critical-shortage)" : "var(--color-oversupply)" }}>{r.gap > 0 ? "+" : ""}{r.gap.toLocaleString("en-IN")}</span> },
     { key: "gapPercent", header: t("table.gapPct"), sortable: true, align: "right", render: (r) => <span style={{ fontWeight: 700, color: r.gapPercent > 0 ? "var(--color-critical-shortage)" : "var(--color-oversupply)" }}>{r.gapPercent > 0 ? "+" : ""}{r.gapPercent.toFixed(1)}%</span> },
     { key: "severity", header: t("table.severity"), render: (r) => <SeverityBadge severity={r.severity} /> },
-    { key: "nsqfLevel", header: "NSQF", align: "center", render: (r) => `L${r.nsqfLevel}` },
     { key: "isAspirational", header: "Asp.", align: "center", render: (r) => r.isAspirational ? <span style={{ color: "var(--color-accent)", fontWeight: 700, fontSize: 10 }}>●</span> : null },
   ];
 
@@ -58,17 +101,25 @@ export default function Gaps() {
     { key: "rank", header: "#", align: "center", width: "40px" },
     { key: "tradeName", header: t("table.trade"), sortable: true },
     { key: "sectorName", header: t("table.sector"), sortable: true },
-    { key: "stateCount", header: "States", sortable: true, align: "center" },
     { key: "avgGapPercent", header: "Avg Gap %", sortable: true, align: "right", render: (r) => <span style={{ fontWeight: 700, color: r.avgGapPercent > 0 ? "var(--color-critical-shortage)" : "var(--color-oversupply)" }}>{r.avgGapPercent > 0 ? "+" : ""}{Math.abs(r.avgGapPercent).toFixed(1)}%</span> },
     { key: "severity", header: "Severity", render: (r) => <SeverityBadge severity={r.severity} /> },
     { key: "trend", header: "Trend", align: "center", render: (r) => <TrendIcon trend={r.trend} /> },
   ];
 
-  const handleExport = () => {
-    const rows = tabData;
-    const headers = ["Trade", "Sector", "State", "District", "Demand", "Supply", "Gap", "Gap%", "Severity", "NSQF"];
-    const csv = [headers.join(","), ...rows.map((r) => [r.tradeName, r.sectorName, r.stateName, r.districtName, r.demand, r.supply, r.gap, r.gapPercent, r.severity, r.nsqfLevel].join(","))].join("\n");
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "skill-gaps.csv"; a.click();
+  const handleExport = async () => {
+    try {
+      const url = getGapsExportCsvUrl({
+        state_id: filters.stateId ? Number(filters.stateId) : undefined,
+        district_id: filters.districtId ? Number(filters.districtId) : undefined,
+        sector_id: filters.sectorId ? Number(filters.sectorId) : undefined,
+      });
+      await downloadAuthenticatedCsv(url, "gap_analysis.csv");
+    } catch {
+      // Fallback: client-side CSV
+      const headers = ["Trade", "Sector", "State", "District", "Demand", "Supply", "Gap", "Gap%", "Severity"];
+      const csv = [headers.join(","), ...tabData.map((r) => [r.tradeName, r.sectorName, r.stateName, r.districtName, r.demand, r.supply, r.gap, r.gapPercent, r.severity].join(","))].join("\n");
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "skill-gaps.csv"; a.click();
+    }
   };
 
   return (
@@ -99,26 +150,32 @@ export default function Gaps() {
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 16, marginBottom: 16 }}>
-          <ChartCard title="Ranking" subtitle={`${rankData.length} trades ranked by severity`} ariaLabel="Trade ranking table">
-            <DataTable columns={rankCols} data={rankData} pageSize={8} onRowClick={(r) => navigate(`/gaps?ncoCode=${r.ncoCode}`)} ariaLabel="Trade ranking" />
-          </ChartCard>
+        {gapsLoading ? (
+          <div style={{ padding: 40, textAlign: "center", color: "var(--color-text-muted)", fontSize: 12 }}>Loading gap data…</div>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 16, marginBottom: 16 }}>
+              <ChartCard title="Ranking" subtitle={`${rankData.length} trades ranked by severity`} ariaLabel="Trade ranking table">
+                <DataTable columns={rankCols} data={rankData} pageSize={8} ariaLabel="Trade ranking" />
+              </ChartCard>
 
-          <ChartCard title="Gap Magnitude" subtitle="Top 10 trades by absolute gap %" ariaLabel="Gap bar chart">
-            <GapBarChart data={tabData} />
-          </ChartCard>
-        </div>
+              <ChartCard title="Gap Magnitude" subtitle="Top 10 trades by absolute gap %" ariaLabel="Gap bar chart">
+                <GapBarChart data={tabData} />
+              </ChartCard>
+            </div>
 
-        <ChartCard title="All Trade-District Combinations" subtitle={`${tabData.length} records`} ariaLabel="Full gap data table" onDownload={handleExport}>
-          <DataTable
-            columns={gapCols}
-            data={tabData}
-            pageSize={10}
-            stickyHeader
-            onRowClick={(r) => navigate(`/district/${r.districtId}`)}
-            ariaLabel="Skill gap full table"
-          />
-        </ChartCard>
+            <ChartCard title="All Trade-District Combinations" subtitle={`${tabData.length} records`} ariaLabel="Full gap data table" onDownload={handleExport}>
+              <DataTable
+                columns={gapCols}
+                data={tabData}
+                pageSize={10}
+                stickyHeader
+                onRowClick={(r) => navigate(`/district/${r.districtId}`)}
+                ariaLabel="Skill gap full table"
+              />
+            </ChartCard>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
-﻿import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { ConfigProvider } from "./context/ConfigContext";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
+import { AuthProvider } from "./context/AuthContext";
 import AppLayout from "./layouts/AppLayout";
 import Home from "./pages/Home";
 import Overview from "./pages/Overview";
@@ -14,6 +15,7 @@ import Sources from "./pages/Sources";
 import ApiDocs from "./pages/ApiDocs";
 import StateDrilldown from "./pages/StateDrilldown";
 import DistrictDrilldown from "./pages/DistrictDrilldown";
+import LoginPage from "./pages/LoginPage";
 import "./i18n/index";
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 300000 } } });
@@ -27,25 +29,28 @@ export default function App() {
     <QueryClientProvider client={qc}>
       <AccessibilityProvider>
         <ConfigProvider>
-          <BrowserRouter>
-            <Suspense fallback={<div style={{ padding: 64, textAlign: "center", color: "var(--color-text-muted)" }}>Loading…</div>}>
-              <Routes>
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/overview" element={<Overview />} />
-                  <Route path="/state/:stateId" element={<StateDrilldown />} />
-                  <Route path="/district/:districtId" element={<DistrictDrilldown />} />
-                  <Route path="/gaps" element={<Gaps />} />
-                  <Route path="/alerts" element={<Alerts />} />
-                  <Route path="/recommendations" element={<Recommendations />} />
-                  <Route path="/methodology" element={<Methodology />} />
-                  <Route path="/sources" element={<Sources />} />
-                  <Route path="/api-docs" element={<ApiDocs />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
+          <AuthProvider>
+            <BrowserRouter>
+              <Suspense fallback={<div style={{ padding: 64, textAlign: "center", color: "var(--color-text-muted)" }}>Loading…</div>}>
+                <Routes>
+                  <Route element={<AppLayout />}>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/overview" element={<Overview />} />
+                    <Route path="/state/:stateId" element={<StateDrilldown />} />
+                    <Route path="/district/:districtId" element={<DistrictDrilldown />} />
+                    <Route path="/gaps" element={<Gaps />} />
+                    <Route path="/alerts" element={<Alerts />} />
+                    <Route path="/recommendations" element={<Recommendations />} />
+                    <Route path="/methodology" element={<Methodology />} />
+                    <Route path="/sources" element={<Sources />} />
+                    <Route path="/api-docs" element={<ApiDocs />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </AuthProvider>
         </ConfigProvider>
       </AccessibilityProvider>
     </QueryClientProvider>

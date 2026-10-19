@@ -1,17 +1,20 @@
-﻿import { AlertCircle, AlertTriangle, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import { AlertCircle, AlertTriangle, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Alert } from "../../types";
 import SeverityBadge from "./SeverityBadge";
 
-const TYPE_CONFIG = {
-  shortage:   { Icon: AlertCircle,   color: "#c0392b", bg: "#fdf2f2", border: "#f5c6c6", label: "Shortage Alert" },
-  oversupply: { Icon: TrendingDown,  color: "#2980b9", bg: "#eef5fc", border: "#b0cfe8", label: "Oversupply Alert" },
-  emerging:   { Icon: TrendingUp,    color: "#e67e22", bg: "#fef6ee", border: "#fcd8b0", label: "Emerging Trade" },
-  saturation: { Icon: AlertTriangle, color: "#8e44ad", bg: "#f8f0fc", border: "#d8a8f0", label: "Saturation Risk" },
+const TYPE_CONFIG: Record<string, { Icon: typeof AlertCircle; color: string; bg: string; border: string; label: string }> = {
+  shortage:        { Icon: AlertCircle,   color: "#c0392b", bg: "#fdf2f2", border: "#f5c6c6", label: "Shortage Alert" },
+  shortage_risk:   { Icon: AlertCircle,   color: "#c0392b", bg: "#fdf2f2", border: "#f5c6c6", label: "Shortage Risk" },
+  oversupply:      { Icon: TrendingDown,  color: "#2980b9", bg: "#eef5fc", border: "#b0cfe8", label: "Oversupply Alert" },
+  oversupply_risk: { Icon: TrendingDown,  color: "#2980b9", bg: "#eef5fc", border: "#b0cfe8", label: "Oversupply Risk" },
+  demand_trend:    { Icon: TrendingUp,    color: "#e67e22", bg: "#fef6ee", border: "#fcd8b0", label: "Demand Trend" },
+  emerging:        { Icon: TrendingUp,    color: "#e67e22", bg: "#fef6ee", border: "#fcd8b0", label: "Emerging Trade" },
+  saturation:      { Icon: AlertTriangle, color: "#8e44ad", bg: "#f8f0fc", border: "#d8a8f0", label: "Saturation Risk" },
 };
 
 export default function AlertCard({ alert }: { alert: Alert }) {
-  const cfg = TYPE_CONFIG[alert.type];
+  const cfg = TYPE_CONFIG[alert.type] || TYPE_CONFIG.shortage;
   const navigate = useNavigate();
 
   return (

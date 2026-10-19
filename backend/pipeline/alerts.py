@@ -55,13 +55,15 @@ def run(db=None):
             # Rule 1: Sustained demand growth
             if len(months_desc) >= SUSTAINED_GROWTH_MONTHS:
                 check_months = months_desc[:SUSTAINED_GROWTH_MONTHS + 1]
+                min_m = min(check_months)
+                max_m = max(check_months)
                 vals = db.execute(text("""
                     SELECT month, index_value FROM demand_index
                     WHERE district_id=:did AND occupation_id=:oid
-                      AND month IN :months
+                      AND month >= :min_m AND month <= :max_m
                     ORDER BY month DESC
                 """), {"did": district_id, "oid": occupation_id,
-                       "months": tuple(check_months)}).fetchall()
+                       "min_m": min_m, "max_m": max_m}).fetchall()
                 if len(vals) >= SUSTAINED_GROWTH_MONTHS:
                     v_list = [r[1] for r in vals]
                     growing = all(v_list[i] > v_list[i+1] for i in range(SUSTAINED_GROWTH_MONTHS - 1))

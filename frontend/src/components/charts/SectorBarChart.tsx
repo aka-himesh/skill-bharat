@@ -1,4 +1,4 @@
-﻿import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface SectorData { sector: string; demand: number; supply: number; gap: number; }
 
@@ -25,7 +25,7 @@ export default function SectorBarChart() {
           <YAxis tick={{ fontSize: 10, fill: "#7a8fa8" }} tickLine={false} axisLine={false}
             tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)} />
           <Tooltip contentStyle={{ fontSize: 11, border: "1px solid var(--color-border)", borderRadius: 4 }}
-            formatter={(v: unknown, n: string) => [(Number(v) || 0).toLocaleString('en-IN'), n]} />
+            formatter={(v: any, n: any) => [(Number(v) || 0).toLocaleString('en-IN'), String(n ?? "")]} />
           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
           <Bar dataKey="demand" name="Demand" fill="#1a3a6b" radius={[3, 3, 0, 0]} />
           <Bar dataKey="supply" name="Supply" fill="#138808" radius={[3, 3, 0, 0]} />

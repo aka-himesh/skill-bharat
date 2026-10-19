@@ -1,56 +1,119 @@
-﻿import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { mockSources } from "../mocks/data";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Radio, LogIn } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useSourcesStatus } from "../hooks/useApi";
+import { useNavigate } from "react-router-dom";
 
-const STATUS_CONFIG = {
+const STATUS_CONFIG: Record<string, { Icon: typeof CheckCircle2; color: string; bg: string; label: string }> = {
   live: { Icon: CheckCircle2, color: "#138808", bg: "#f0faf4", label: "Live" },
   demo: { Icon: Clock, color: "#e67e22", bg: "#fef6ee", label: "Demo / Synthetic" },
+  synthetic: { Icon: Clock, color: "#e67e22", bg: "#fef6ee", label: "Demo / Synthetic" },
   unavailable: { Icon: XCircle, color: "#c0392b", bg: "#fdf2f2", label: "Unavailable" },
+  pending: { Icon: Clock, color: "#2980b9", bg: "#eef5fc", label: "Pending Integration" },
 };
 
 export default function Sources() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
+  const { data: apiSourcesData, isLoading } = useSourcesStatus(isLoggedIn);
+
+  const isLive = isLoggedIn && !!apiSourcesData?.sources?.length;
+
+  type DisplaySource = {
+    id: string;
+    name: string;
+    description: string;
+    lastIngested: string;
+    status: string;
+    recordCount: number;
+    coverageNote: string;
+  };
+
+  let sources: DisplaySource[] = [];
+  if (isLive && apiSourcesData?.sources) {
+    sources = apiSourcesData.sources.map((s, i) => ({
+      id: `src-${i}`,
+      name: s.name,
+      description: s.description,
+      lastIngested: s.last_import ? new Date(s.last_import).toLocaleDateString("en-IN") : "Active",
+      status: s.status.toLowerCase(),
+      recordCount: s.record_count || 0,
+      coverageNote: `${s.coverage || "Regional"} · Adapter: ${s.adapter || "Direct"} · ${s.limitations || ""}`,
+    }));
+  } else {
+    sources = mockSources;
+  }
+
   return (
     <div>
       <div style={{ background: "var(--color-surface)", borderBottom: "1px solid var(--color-border)", padding: "14px 0" }}>
-        <div style={{ maxWidth: "var(--container-max)", margin: "0 auto", padding: "0 24px" }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t("sources.title")}</h1>
-          <p style={{ fontSize: 12, color: "var(--color-text-secondary)", margin: "4px 0 0" }}>{t("sources.subtitle")}</p>
+        <div style={{ maxWidth: "var(--container-max)", margin: "0 auto", padding: "0 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t("sources.title")}</h1>
+              {isLive ? (
+                <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, background: "#f0faf4", color: "#138808", border: "1px solid #a8dfc0", borderRadius: 4, padding: "2px 8px", fontWeight: 600 }}>
+                  <Radio size={11} className="animate-pulse" /> LIVE TELEMETRY
+                </span>
+              ) : (
+                <span style={{ fontSize: 11, background: "#fef6ee", color: "#e67e22", border: "1px solid #fcd8b0", borderRadius: 4, padding: "2px 8px", fontWeight: 600 }}>
+                  DEMO STATUS
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: 12, color: "var(--color-text-secondary)", margin: 0 }}>{t("sources.subtitle")}</p>
+          </div>
+          {!isLoggedIn && (
+            <button
+              onClick={() => navigate("/login")}
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", color: "var(--color-primary)", border: "1px solid var(--color-primary)", borderRadius: 4, padding: "6px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+            >
+              <LogIn size={13} /> Login for Live Connector Status
+            </button>
+          )}
         </div>
       </div>
       <div style={{ maxWidth: "var(--container-max)", margin: "0 auto", padding: "20px 24px" }}>
         <div style={{ marginBottom: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
           {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: v.bg, border: `1px solid`, borderColor: v.color + "40", borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: v.bg, border: `1px solid ${v.color}40`, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>
               <v.Icon size={12} color={v.color} /> <span style={{ color: v.color, fontWeight: 700 }}>{v.label}</span>
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {mockSources.map((src) => {
-            const cfg = STATUS_CONFIG[src.status];
-            return (
-              <div key={src.id} style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", padding: "16px 20px", boxShadow: "var(--shadow-sm)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                    <cfg.Icon size={16} color={cfg.color} />
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>{src.name}</span>
-                    <span style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}40`, borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>{cfg.label}</span>
+
+        {isLoading ? (
+          <div style={{ textAlign: "center", padding: 48, color: "var(--color-text-muted)", fontSize: 13 }}>
+            Querying connector endpoints...
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {sources.map((src) => {
+              const cfg = STATUS_CONFIG[src.status] || STATUS_CONFIG.demo;
+              return (
+                <div key={src.id} style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", padding: "16px 20px", boxShadow: "var(--shadow-sm)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                      <cfg.Icon size={16} color={cfg.color} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>{src.name}</span>
+                      <span style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}40`, borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>{cfg.label}</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: "var(--color-text-secondary)", margin: "0 0 8px", lineHeight: 1.6 }}>{src.description}</p>
+                    <div style={{ fontSize: 11, color: "var(--color-text-muted)", fontStyle: "italic" }}>{src.coverageNote}</div>
                   </div>
-                  <p style={{ fontSize: 12, color: "var(--color-text-secondary)", margin: "0 0 8px", lineHeight: 1.6 }}>{src.description}</p>
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)", fontStyle: "italic" }}>{src.coverageNote}</div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "var(--color-text-primary)" }}>{src.recordCount.toLocaleString("en-IN")}</div>
+                    <div style={{ fontSize: 10, color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase" }}>Records</div>
+                    <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 4 }}>Last ingested:<br />{src.lastIngested}</div>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--color-text-primary)" }}>{src.recordCount.toLocaleString("en-IN")}</div>
-                  <div style={{ fontSize: 10, color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase" }}>Records</div>
-                  <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 4 }}>Last ingested:<br />{src.lastIngested}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

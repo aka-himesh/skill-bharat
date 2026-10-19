@@ -1,8 +1,9 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useConfig } from "../../context/ConfigContext";
-import { Menu, X, ChevronDown, Search } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { Menu, X, ChevronDown, Search, LogIn, LogOut } from "lucide-react";
 
 const NAV = [
   { key: "home", to: "/" },
@@ -28,6 +29,7 @@ const NAV = [
 export default function Header() {
   const { t } = useTranslation();
   const { config } = useConfig();
+  const { isLoggedIn, logout } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -120,11 +122,32 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Search + Help + MSDE badge */}
+          {/* Search + Auth + MSDE badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button aria-label="Search" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 4, padding: "6px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}>
               <Search size={15} />
             </button>
+            {isLoggedIn ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, background: "rgba(19,136,8,0.25)", border: "1px solid #138808", borderRadius: 4, padding: "3px 8px", color: "#a8dfc0", fontWeight: 600 }}>
+                  Officer (PIN: 26246)
+                </span>
+                <button
+                  onClick={logout}
+                  style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", borderRadius: 4, padding: "4px 8px", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}
+                  title="Logout"
+                >
+                  <LogOut size={12} /> Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                style={{ background: "var(--color-accent, #e8601c)", border: "none", color: "#fff", borderRadius: 4, padding: "4px 10px", textDecoration: "none", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}
+              >
+                <LogIn size={13} /> Login
+              </Link>
+            )}
             <span style={{ fontSize: 10, color: "#7aa8cc", background: "rgba(255,255,255,0.08)", borderRadius: 4, padding: "4px 8px", border: "1px solid rgba(255,255,255,0.12)" }}>
               {t("header.builtFor")}
             </span>

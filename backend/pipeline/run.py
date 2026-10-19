@@ -41,12 +41,12 @@ def run_pipeline():
 
     try:
         for name, fn in steps:
-            print(f"\n── {name} ──")
+            print(f"\n-- {name} --")
             t0 = time.time()
             count = fn(db)
             elapsed = time.time() - t0
             results[name] = {"count": count, "elapsed_s": round(elapsed, 2)}
-            print(f"  Done in {elapsed:.2f}s — {count} records")
+            print(f"  Done in {elapsed:.2f}s - {count} records")
 
     except Exception as e:
         db.rollback()

@@ -1,4 +1,4 @@
-﻿import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from "recharts";
 import type { GapRow } from "../../types";
 
 export default function GapBarChart({ data }: { data: GapRow[] }) {
@@ -13,7 +13,7 @@ export default function GapBarChart({ data }: { data: GapRow[] }) {
             tickFormatter={(v: number) => `${v}%`} domain={[-150, 100]} />
           <YAxis type="category" dataKey="tradeName" tick={{ fontSize: 10, fill: "#4a5a72" }} width={95} />
           <Tooltip
-            formatter={(v: unknown, _n: string) => [(Number(v) || 0).toFixed(1) + '%', 'Gap %']}
+            formatter={(v: any) => [(Number(v) || 0).toFixed(1) + '%', 'Gap %']}
             contentStyle={{ fontSize: 11, border: "1px solid var(--color-border)", borderRadius: 4 }}
           />
           <Bar dataKey="gapPercent" name="Gap %" radius={[0, 3, 3, 0]}>
