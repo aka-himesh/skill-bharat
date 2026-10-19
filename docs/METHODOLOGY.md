@@ -347,3 +347,74 @@ The system enforces these transparency rules throughout:
 
 *Document maintained by the AI-LMIS development team.*  
 *For questions about methodology, refer to the source code in `backend/pipeline/`.*
+
+---
+
+## Phase 2 Additions: Live Data Sources
+
+### e-Shram (data.gov.in) — Supply-Side Indicator
+
+**Role in the pipeline:** SUPPLY-SIDE / workforce-size signal. **Not a vacancy count.**
+
+e-Shram registrations count unorganised workers who have self-registered on the national portal.
+They indicate *where* the informal workforce is concentrated, not *where* jobs are available.
+
+**How it is used:**
+
+1. **District weighting factor:** Districts with more registered workers receive proportionally
+   higher weight when aggregating demand signals from other sources. Rationale: a district with
+   3 lakh registered workers has more economic activity than one with 5,000, so demand signals
+   from there deserve more weight.
+
+2. **Supply-side panel:** The Overview, State and District pages display registered-worker counts
+   alongside the demand index so planners can see the labour-supply context.
+
+3. **NOT used as demand signal:** Registration counts are explicitly excluded from the demand-
+   index calculation to avoid presenting workforce presence as job vacancies.
+
+**Data quality notes:**
+- Registrations are self-reported; coverage of the informal sector may be incomplete.
+- District name spellings in data.gov.in may differ from our canonical geography.
+  Normalisation is handled by ackend/lmis_config/geo_aliases.json + rapidfuzz fuzzy matching.
+- Unmatched districts are logged at GET /api/eshram/unmatched and do NOT cause pipeline errors;
+  synthetic values are used for those districts.
+- Only the most recent daily snapshot is used for calibration. Up to 30 days are stored for trend.
+
+**Fallback chain (in priority order):**
+1. Live fetch from data.gov.in (10 s timeout, 2 retries with backoff).
+2. Latest SQLite snapshot (if within ESHRAM_CACHE_TTL_HOURS).
+3. Synthetic values generated with andom.Random(42).
+
+Every API response includes {"source": "live"|"cached"|"synthetic"} so the UI can label data
+provenance correctly.
+
+---
+
+### News Feed — Contextual Information Only
+
+The News Highlights panel is **informational only** and does not feed into any quantitative model.
+
+**Purpose:** Surface recent policy announcements, labour market developments and skilling programme
+news so dashboard users have contextual awareness. Not used for scoring or forecasting.
+
+**Filtering methodology:**
+
+`
+relevance = (title_keyword_matches × 3) + (description_keyword_matches × 1)
+            + TRUSTED_SOURCE_BOOST (if source in curated list)
+`
+
+- Items with elevance < NEWS_MIN_SCORE are dropped.
+- Items matching any EXCLUDE_KEYWORD (e.g., "Labour Party" UK politics, cricket, Bollywood)
+  are discarded regardless of include-keyword matches.
+- Deduplication by normalised title and URL host+path.
+- Sorted by (published_at desc, relevance desc), capped at NEWS_MAX_ITEMS.
+
+Keyword lists are editable in ackend/lmis_config/news_keywords.py without a DB migration.
+The active lists are exposed at GET /api/news/keywords for transparency.
+
+**Provider cascade:**
+configured provider (newsapi/gnews) → RSS feeds (no key required) → undled seed file
+
+When source == "synthetic", the UI displays a "Sample" badge.
+

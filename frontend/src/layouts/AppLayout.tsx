@@ -1,9 +1,10 @@
-﻿import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import UtilityBar from "../components/layout/UtilityBar";
 import Header from "../components/layout/Header";
 import FilterBar from "../components/layout/FilterBar";
 import Footer from "../components/layout/Footer";
 import Breadcrumb from "../components/ui/Breadcrumb";
+import NewsHighlights from "../components/ui/NewsHighlights";
 import { FilterProvider } from "../context/FilterContext";
 
 const FILTER_PAGES = ["/overview", "/gaps", "/alerts", "/recommendations", "/state", "/district"];
@@ -16,6 +17,7 @@ function InnerLayout() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <UtilityBar />
       <Header />
+      <NewsHighlights variant="ticker" />
       <FilterProvider>
         {showFilter && <FilterBar />}
         <Breadcrumb />

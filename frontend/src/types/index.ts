@@ -186,3 +186,65 @@ export interface StateMapData {
   totalDemand: number;
   totalSupply: number;
 }
+
+// ── Phase 2: News & e-Shram types ─────────────────────────────────────────────
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  source_name: string;
+  published_at: string;
+  image_url: string | null;
+  tags: string[];
+  relevance: number;
+}
+
+export interface NewsResponse {
+  source: "live" | "cached" | "synthetic";
+  provider: string;
+  fetched_at: string;
+  items: NewsItem[];
+}
+
+export interface EshramStateTotals {
+  state: string;
+  total: number;
+}
+
+export interface EshramDistrictRow {
+  state: string;
+  district: string;
+  registered_workers_total: number;
+  male: number;
+  female: number;
+  age_18_40: number;
+  age_40_plus: number;
+  sc: number;
+  st: number;
+  obc: number;
+  general: number;
+  snapshot_date: string;
+  source: "live" | "cached" | "synthetic";
+  fetched_at: string;
+}
+
+export interface EshramSummaryResponse {
+  national_total: number;
+  state_totals: EshramStateTotals[];
+  top_districts: EshramDistrictRow[];
+  record_count: number;
+  source: "live" | "cached" | "synthetic";
+  snapshot_date: string | null;
+  fetched_at: string | null;
+}
+
+export interface EshramDistrictsResponse {
+  rows: EshramDistrictRow[];
+  count: number;
+  source: "live" | "cached" | "synthetic";
+  snapshot_date: string | null;
+  fetched_at: string | null;
+}
+

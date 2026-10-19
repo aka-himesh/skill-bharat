@@ -1,0 +1,90 @@
+[
+  {
+    "id": "seed001",
+    "title": "PMKVY 4.0 to train 40 lakh youth in emerging technologies: MSDE",
+    "summary": "The Ministry of Skill Development and Entrepreneurship has announced that Pradhan Mantri Kaushal Vikas Yojana 4.0 will focus on drone technology, AI, robotics and green jobs, targeting 40 lakh workers by 2026.",
+    "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=1001",
+    "source_name": "PIB India",
+    "published_at": "2026-10-15T09:00:00+05:30",
+    "image_url": null,
+    "tags": ["PMKVY", "skill development", "skilling"],
+    "relevance": 9
+  },
+  {
+    "id": "seed002",
+    "title": "e-Shram portal crosses 30 crore registrations of unorganised workers",
+    "summary": "The e-Shram portal, launched by the Ministry of Labour and Employment, has registered over 30 crore unorganised workers, providing a comprehensive database for welfare schemes and social security coverage.",
+    "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=1002",
+    "source_name": "PIB India",
+    "published_at": "2026-10-14T10:30:00+05:30",
+    "image_url": null,
+    "tags": ["e-Shram", "unorganised workers", "workforce"],
+    "relevance": 10
+  },
+  {
+    "id": "seed003",
+    "title": "National Career Service centres to add 500 new employment exchange points",
+    "summary": "The NCS portal under the Ministry of Labour will expand National Career Service Centres to tier-2 and tier-3 cities, enhancing job matching for skilled workers and recent ITI graduates.",
+    "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=1003",
+    "source_name": "PIB India",
+    "published_at": "2026-10-13T08:00:00+05:30",
+    "image_url": null,
+    "tags": ["NCS", "employment", "ITI"],
+    "relevance": 9
+  },
+  {
+    "id": "seed004",
+    "title": "India's unemployment rate falls to 7.2% in urban areas: PLFS 2025-26",
+    "summary": "The Periodic Labour Force Survey (PLFS) 2025-26 shows urban unemployment at 7.2%, down from 8.4% in the previous year, with significant improvement in female labour force participation.",
+    "url": "https://mospi.gov.in/reports/plfs-2025",
+    "source_name": "MoSPI",
+    "published_at": "2026-10-12T11:00:00+05:30",
+    "image_url": null,
+    "tags": ["PLFS", "unemployment", "labour market"],
+    "relevance": 8
+  },
+  {
+    "id": "seed005",
+    "title": "NCVET revises qualification framework for healthcare and construction sectors",
+    "summary": "The National Council for Vocational Education and Training has revised NSQF levels for over 200 job roles in healthcare, construction and logistics to better align with industry skill requirements.",
+    "url": "https://ncvet.gov.in/news/nsqf-revision-2026",
+    "source_name": "NCVET",
+    "published_at": "2026-10-11T09:30:00+05:30",
+    "image_url": null,
+    "tags": ["NCVET", "NSQF", "vocational", "skill development"],
+    "relevance": 8
+  },
+  {
+    "id": "seed006",
+    "title": "Gig economy workers to get social security under new labour code implementation",
+    "summary": "The government is set to notify rules under the Code on Social Security, 2020 that will extend ESIC and EPFO coverage to gig workers and platform workers employed by aggregator companies.",
+    "url": "https://economictimes.indiatimes.com/news/economy/policy/gig-workers-social-security",
+    "source_name": "Economic Times",
+    "published_at": "2026-10-10T08:00:00+05:30",
+    "image_url": null,
+    "tags": ["gig workers", "labour code", "workforce"],
+    "relevance": 7
+  },
+  {
+    "id": "seed007",
+    "title": "Minimum wage revision: Central Advisory Board recommends 15% hike",
+    "summary": "The Central Advisory Board on Minimum Wages has recommended a 15 percent increase in the national floor wage, which would benefit an estimated 50 million workers in the unorganised sector.",
+    "url": "https://www.thehindu.com/business/minimum-wage-hike-2026",
+    "source_name": "The Hindu",
+    "published_at": "2026-10-09T10:00:00+05:30",
+    "image_url": null,
+    "tags": ["minimum wage", "wages", "unorganised workers"],
+    "relevance": 7
+  },
+  {
+    "id": "seed008",
+    "title": "Apprenticeship Act amendment to bring 10 lakh more seats in manufacturing",
+    "summary": "A proposed amendment to the Apprenticeship Act aims to make apprenticeship mandatory for establishments above 100 workers, which is expected to create 10 lakh new apprenticeship opportunities in manufacturing and services.",
+    "url": "https://www.business-standard.com/economy/apprenticeship-act-amendment-2026",
+    "source_name": "Business Standard",
+    "published_at": "2026-10-08T07:30:00+05:30",
+    "image_url": null,
+    "tags": ["apprenticeship", "skill development", "employment"],
+    "relevance": 8
+  }
+]

@@ -1,18 +1,17 @@
 """sources_router.py — Data source status and methodology endpoints."""
 from fastapi import APIRouter, Depends
-from sqlalchemy import text
-from sqlalchemy.orm import Session
-from database import get_db
 from auth import get_current_user
 from connectors.plfs_connector import PLFSConnector
 from connectors.ncs_connector import NCSConnector
 from connectors.eshram_connector import EShramConnector
 from connectors.training_connector import TrainingConnector
 from connectors.job_portal_connector import JobPortalConnector
+from connectors.eshram import eshram_connector as eshram_live
+from config import settings
 
 router = APIRouter(prefix="/api", tags=["sources"])
 
-_connectors = [
+_legacy_connectors = [
     PLFSConnector(),
     NCSConnector(),
     EShramConnector(),
@@ -21,14 +20,36 @@ _connectors = [
 ]
 
 
+def _news_status() -> dict:
+    provider = settings.NEWS_PROVIDER
+    live = settings.news_live_ready
+    return {
+        "name": f"News Feed ({provider.upper()})",
+        "adapter_name": "news_connector",
+        "status": "live" if live else "synthetic",
+        "provenance_type": "editorial" if live else "synthetic",
+        "message": (
+            f"Live news filtered for labour/skilling via {provider} provider."
+            if live
+            else "Demo mode — seed headlines only. Set USE_LIVE_DATA=true to enable live news."
+        ),
+        "last_updated": None,
+        "record_count": None,
+        "latency_ms": None,
+    }
+
+
 @router.get("/sources/status", summary="Connector status for all data sources")
 def sources_status(_=Depends(get_current_user)):
+    legacy = [c.get_status() for c in _legacy_connectors]
+    live_sources = [eshram_live.get_status(), _news_status()]
+    all_sources = legacy + live_sources
     return {
-        "total": len(_connectors),
-        "sources": [c.get_status() for c in _connectors],
+        "total": len(all_sources),
+        "sources": all_sources,
         "note": (
-            "All sources currently in mock/stub mode. "
-            "See docs/METHODOLOGY.md for real-integration instructions."
+            "Legacy connectors use synthetic/stub data. "
+            "e-Shram and News use live data when DATAGOV_API_KEY and USE_LIVE_DATA=true are set."
         ),
     }
 

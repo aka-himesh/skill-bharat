@@ -3,14 +3,17 @@ main.py — FastAPI application entry point for AI-LMIS.
 
 Authentication: All /api/* routes require JWT except /api/config and /api/auth/*.
 CORS: Enabled for configured frontend port.
-Startup: Initialises DB and runs seed if DB is empty.
+Startup: Initialises DB, seeds if empty, wires e-Shram connector to DB,
+         schedules background data refresh.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI, Request
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from config import settings
 from database import init_db, SessionLocal
@@ -25,6 +28,112 @@ from routers.forecast_router import router as forecast_router
 from routers.alerts_router import router as alerts_router
 from routers.recommendations_router import router as recommendations_router
 from routers.sources_router import router as sources_router
+from routers.eshram_router import router as eshram_router
+from routers.news_router import router as news_router
+
+logger = logging.getLogger(__name__)
+
+
+# ── APScheduler background refresh ───────────────────────────────────────────
+_scheduler = None
+
+
+def _start_scheduler():
+    """Start APScheduler background jobs for live data refresh."""
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from connectors.eshram import eshram_connector
+        from services.news_filter import invalidate_cache
+
+        scheduler = BackgroundScheduler(timezone="UTC")
+
+        if settings.eshram_live_ready:
+            scheduler.add_job(
+                lambda: eshram_connector._fetch_live(),
+                "interval",
+                hours=settings.ESHRAM_CACHE_TTL_HOURS,
+                id="eshram_refresh",
+                max_instances=1,
+                coalesce=True,
+            )
+            logger.info(
+                "[scheduler] e-Shram refresh every %d hours", settings.ESHRAM_CACHE_TTL_HOURS
+            )
+
+        # News cache refresh
+        scheduler.add_job(
+            invalidate_cache,
+            "interval",
+            minutes=settings.NEWS_CACHE_TTL_MINUTES,
+            id="news_refresh",
+            max_instances=1,
+            coalesce=True,
+        )
+
+        scheduler.start()
+        logger.info("[scheduler] APScheduler started.")
+        return scheduler
+    except Exception as e:
+        logger.warning("[scheduler] Could not start APScheduler: %s", e)
+        return None
+
+
+# ── App lifecycle ─────────────────────────────────────────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize DB, seed (non-blocking), wire connectors, start scheduler."""
+    global _scheduler
+
+    # 1. Create tables synchronously (fast)
+    init_db()
+
+    # 2. Wire eshram connector to DB session factory immediately
+    from connectors.eshram import eshram_connector
+    eshram_connector.set_db(SessionLocal)
+
+    # 3. Run seed + pipeline in a background thread so startup doesn't block
+    def _seed_and_pipeline():
+        db = SessionLocal()
+        try:
+            from sqlalchemy import text
+            count = db.execute(text("SELECT COUNT(*) FROM states")).scalar()
+            if count == 0:
+                logger.info("[startup] DB empty — running seed generator...")
+                from seed.generate import run as seed_run
+                seed_run()
+                logger.info("[startup] Seed complete. Running pipeline...")
+                from pipeline.run import run_pipeline
+                run_pipeline()
+            else:
+                logger.info("[startup] DB already has %d state(s).", count)
+        except Exception as e:
+            logger.warning("[startup] Warning during seed: %s", e)
+        finally:
+            db.close()
+
+    import threading
+    threading.Thread(target=_seed_and_pipeline, daemon=True, name="seed-thread").start()
+
+    # 4. Kick off initial e-Shram fetch in background (non-blocking)
+    if settings.eshram_live_ready:
+        def _initial_eshram():
+            try:
+                data = eshram_connector._fetch_live()
+                logger.info("[startup] Initial e-Shram: %d records", len(data.get("rows", [])))
+            except Exception as e:
+                logger.warning("[startup] e-Shram initial fetch failed: %s", e)
+        threading.Thread(target=_initial_eshram, daemon=True, name="eshram-initial").start()
+
+    # 5. Start scheduler
+    _scheduler = _start_scheduler()
+
+    yield  # ← app runs here
+
+    if _scheduler:
+        _scheduler.shutdown(wait=False)
+        logger.info("[shutdown] APScheduler stopped.")
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -32,9 +141,10 @@ app = FastAPI(
         f"{settings.APP_TAGLINE} — SIH 2026 Prototype. "
         "All data is synthetic demonstration data unless explicitly labelled as official."
     ),
-    version="1.0.0-phase1",
+    version="1.0.0-phase2",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    lifespan=lifespan,
 )
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
@@ -63,30 +173,8 @@ app.include_router(forecast_router)
 app.include_router(alerts_router)
 app.include_router(recommendations_router)
 app.include_router(sources_router)
-
-
-# ─── Startup ──────────────────────────────────────────────────────────────────
-@app.on_event("startup")
-async def startup_event():
-    """Initialize DB; auto-seed if empty."""
-    init_db()
-    db = SessionLocal()
-    try:
-        from sqlalchemy import text
-        count = db.execute(text("SELECT COUNT(*) FROM states")).scalar()
-        if count == 0:
-            print("[startup] DB is empty — running seed generator...")
-            from seed.generate import run as seed_run
-            seed_run()
-            print("[startup] Seed complete. Running pipeline...")
-            from pipeline.run import run_pipeline
-            run_pipeline()
-        else:
-            print(f"[startup] DB already has {count} state(s). Skipping seed.")
-    except Exception as e:
-        print(f"[startup] Warning: {e}")
-    finally:
-        db.close()
+app.include_router(eshram_router)
+app.include_router(news_router)
 
 
 @app.get("/", include_in_schema=False)
@@ -94,9 +182,10 @@ def root():
     return {
         "app": settings.APP_NAME,
         "tagline": settings.APP_TAGLINE,
-        "version": "1.0.0-phase1",
+        "version": "1.0.0-phase2",
         "docs": "/api/docs",
         "status": "running",
+        "live_data": settings.USE_LIVE_DATA,
     }
 
 

@@ -514,3 +514,116 @@ export async function downloadAuthenticatedCsv(url: string, filename: string): P
   a.click();
   URL.revokeObjectURL(a.href);
 }
+
+// ── Phase 2: News endpoints ───────────────────────────────────────────────────
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  source_name: string;
+  published_at: string;
+  image_url: string | null;
+  tags: string[];
+  relevance: number;
+}
+
+export interface NewsResponse {
+  source: "live" | "cached" | "synthetic";
+  provider: string;
+  fetched_at: string;
+  items: NewsItem[];
+}
+
+export function fetchNews(params?: { limit?: number; q?: string }): Promise<NewsResponse> {
+  const qs = new URLSearchParams();
+  if (params?.limit != null) qs.set("limit", String(params.limit));
+  if (params?.q) qs.set("q", params.q);
+  const q = qs.toString();
+  return apiFetch<NewsResponse>(`/api/news${q ? `?${q}` : ""}`);
+}
+
+export interface NewsKeywordsResponse {
+  include_keywords: string[];
+  exclude_keywords: string[];
+  trusted_sources: string[];
+  trusted_source_boost: number;
+  min_score: number;
+  scoring_formula: string;
+}
+
+export function fetchNewsKeywords(): Promise<NewsKeywordsResponse> {
+  return apiFetch<NewsKeywordsResponse>("/api/news/keywords");
+}
+
+export async function refreshNews(): Promise<{ status: string; message: string }> {
+  return apiFetch("/api/admin/refresh/news", { method: "POST" });
+}
+
+// ── Phase 2: e-Shram endpoints ────────────────────────────────────────────────
+
+export interface EshramStateTotals {
+  state: string;
+  total: number;
+}
+
+export interface EshramDistrictRow {
+  state: string;
+  district: string;
+  registered_workers_total: number;
+  male: number;
+  female: number;
+  age_18_40: number;
+  age_40_plus: number;
+  sc: number;
+  st: number;
+  obc: number;
+  general: number;
+  snapshot_date: string;
+  source: "live" | "cached" | "synthetic";
+  fetched_at: string;
+}
+
+export interface EshramSummaryResponse {
+  national_total: number;
+  state_totals: EshramStateTotals[];
+  top_districts: EshramDistrictRow[];
+  record_count: number;
+  source: "live" | "cached" | "synthetic";
+  snapshot_date: string | null;
+  fetched_at: string | null;
+}
+
+export function fetchEshramSummary(state?: string): Promise<EshramSummaryResponse> {
+  const qs = state ? `?state=${encodeURIComponent(state)}` : "";
+  return apiFetch<EshramSummaryResponse>(`/api/eshram/summary${qs}`);
+}
+
+export interface EshramDistrictsResponse {
+  rows: EshramDistrictRow[];
+  count: number;
+  source: "live" | "cached" | "synthetic";
+  snapshot_date: string | null;
+  fetched_at: string | null;
+}
+
+export function fetchEshramDistricts(params?: {
+  state?: string;
+  q?: string;
+}): Promise<EshramDistrictsResponse> {
+  const qs = new URLSearchParams();
+  if (params?.state) qs.set("state", params.state);
+  if (params?.q) qs.set("q", params.q);
+  const q = qs.toString();
+  return apiFetch<EshramDistrictsResponse>(`/api/eshram/districts${q ? `?${q}` : ""}`);
+}
+
+export function fetchEshramDistrictDetail(district: string): Promise<EshramDistrictRow | null> {
+  return apiFetch<EshramDistrictRow>(`/api/eshram/district/${encodeURIComponent(district)}`);
+}
+
+export async function refreshEshram(): Promise<{ status: string }> {
+  return apiFetch("/api/admin/refresh/eshram", { method: "POST" });
+}
+

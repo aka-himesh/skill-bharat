@@ -251,3 +251,40 @@ class DataImport(Base):
     unit = Column(String(100))
     import_summary = Column(Text)
     errors = Column(Text)
+
+
+# ─── API Cache (generic key-value payload store with TTL) ─────────────────────
+
+class ApiCache(Base):
+    """
+    Generic cache for external API responses.
+    Each row stores one JSON payload keyed by cache_key.
+    Connector code uses INSERT OR REPLACE to overwrite stale entries.
+    """
+    __tablename__ = "api_cache"
+    cache_key = Column(String(200), primary_key=True)
+    payload_json = Column(Text, nullable=False)
+    fetched_at = Column(String(50), nullable=False)   # ISO datetime string
+    ttl_hours = Column(Float, default=24.0)
+
+
+# ─── e-Shram snapshots ────────────────────────────────────────────────────────
+
+class EshramSnapshot(Base):
+    """
+    One row per (snapshot_date, state, district).
+    Keeps up to 30 daily snapshots; the pipeline prunes older ones.
+    breakdown_json stores the raw demographic fields from data.gov.in.
+    """
+    __tablename__ = "eshram_snapshots"
+    id = Column(Integer, primary_key=True, index=True)
+    snapshot_date = Column(String(20), nullable=False, index=True)
+    state = Column(String(100), nullable=False, index=True)
+    district = Column(String(100), nullable=False, index=True)
+    total_workers = Column(Integer, default=0)
+    breakdown_json = Column(Text)       # JSON with male/female/age/caste breakdown
+    fetched_at = Column(String(50))     # ISO datetime string
+
+    __table_args__ = (
+        Index("ix_eshram_snapshot_date_state_district", "snapshot_date", "state", "district"),
+    )

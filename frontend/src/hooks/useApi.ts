@@ -148,3 +148,67 @@ export function useMethodology(enabled = true) {
     enabled,
   });
 }
+
+// ── Phase 2: News & e-Shram hooks ─────────────────────────────────────────────
+
+import {
+  fetchNews,
+  fetchNewsKeywords,
+  fetchEshramSummary,
+  fetchEshramDistricts,
+  fetchEshramDistrictDetail,
+} from "../services/api";
+
+// News: stale after 15 minutes
+const NEWS_STALE = 15 * 60 * 1000;
+// e-Shram: stale after 6 hours (daily dataset)
+const ESHRAM_STALE = 6 * 60 * 60 * 1000;
+
+export function useNews(params?: { limit?: number; q?: string }, enabled = true) {
+  return useQuery({
+    queryKey: ["news", params],
+    queryFn: () => fetchNews(params),
+    staleTime: NEWS_STALE,
+    enabled,
+  });
+}
+
+export function useNewsKeywords(enabled = true) {
+  return useQuery({
+    queryKey: ["news-keywords"],
+    queryFn: fetchNewsKeywords,
+    staleTime: STALE,
+    enabled,
+  });
+}
+
+export function useEshramSummary(state?: string, enabled = true) {
+  return useQuery({
+    queryKey: ["eshram-summary", state],
+    queryFn: () => fetchEshramSummary(state),
+    staleTime: ESHRAM_STALE,
+    enabled,
+  });
+}
+
+export function useEshramDistricts(
+  params?: { state?: string; q?: string },
+  enabled = true
+) {
+  return useQuery({
+    queryKey: ["eshram-districts", params],
+    queryFn: () => fetchEshramDistricts(params),
+    staleTime: ESHRAM_STALE,
+    enabled,
+  });
+}
+
+export function useEshramDistrictDetail(district: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["eshram-district", district],
+    queryFn: () => fetchEshramDistrictDetail(district!),
+    staleTime: ESHRAM_STALE,
+    enabled: enabled && !!district,
+  });
+}
+

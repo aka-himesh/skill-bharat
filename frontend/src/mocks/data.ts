@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   AppConfig, GeoState, GeoDistrict, Sector, Occupation,
   SummaryData, GapRow, RankingRow, TrendForecastResponse,
   Alert, Recommendation, MethodologyStep, DataSource, StateMapData
@@ -186,3 +186,47 @@ export const mockStateMapData: StateMapData[] = [
   { stateId: "HP", stateName: "Himachal Pradesh", gapScore: 18, severity: "Balanced", totalDemand: 22000, totalSupply: 18040 },
   { stateId: "DL", stateName: "Delhi", gapScore: -10, severity: "Balanced", totalDemand: 114000, totalSupply: 125400 },
 ];
+
+// ── Phase 2 mock data ─────────────────────────────────────────────────────────
+
+import type { NewsItem, NewsResponse, EshramSummaryResponse } from "../types";
+
+export const mockNews: NewsResponse = {
+  source: "synthetic",
+  provider: "seed",
+  fetched_at: new Date().toISOString(),
+  items: [
+    { id: "m1", title: "PMKVY 4.0 targets 40 lakh youth in emerging tech sectors", summary: "MSDE announced Pradhan Mantri Kaushal Vikas Yojana 4.0 focusing on drone, AI, green jobs.", url: "#", source_name: "PIB India", published_at: new Date(Date.now() - 1 * 3600000).toISOString(), image_url: null, tags: ["PMKVY", "skill development"], relevance: 9 },
+    { id: "m2", title: "e-Shram portal crosses 30 crore registrations of unorganised workers", summary: "The Ministry of Labour's e-Shram portal has registered over 30 crore unorganised workers for social security.", url: "#", source_name: "PIB India", published_at: new Date(Date.now() - 5 * 3600000).toISOString(), image_url: null, tags: ["e-Shram", "unorganised workers"], relevance: 10 },
+    { id: "m3", title: "NCS centres to expand to 500 new employment exchange points", summary: "National Career Service centres will reach tier-2 and tier-3 cities to improve job matching.", url: "#", source_name: "PIB India", published_at: new Date(Date.now() - 12 * 3600000).toISOString(), image_url: null, tags: ["NCS", "employment"], relevance: 8 },
+    { id: "m4", title: "PLFS 2025-26: Urban unemployment falls to 7.2%", summary: "Periodic Labour Force Survey shows improved labour market conditions with higher female participation.", url: "#", source_name: "MoSPI", published_at: new Date(Date.now() - 24 * 3600000).toISOString(), image_url: null, tags: ["PLFS", "unemployment", "labour market"], relevance: 8 },
+    { id: "m5", title: "Apprenticeship Act amendment to create 10 lakh new seats", summary: "Mandatory apprenticeship for establishments above 100 workers to generate new training opportunities.", url: "#", source_name: "Business Standard", published_at: new Date(Date.now() - 36 * 3600000).toISOString(), image_url: null, tags: ["apprenticeship", "skill development"], relevance: 7 },
+    { id: "m6", title: "Gig workers to get social security under new labour code rules", summary: "Code on Social Security, 2020 rules will extend ESIC and EPFO coverage to platform workers.", url: "#", source_name: "Economic Times", published_at: new Date(Date.now() - 48 * 3600000).toISOString(), image_url: null, tags: ["gig workers", "labour code"], relevance: 7 },
+  ] as NewsItem[],
+};
+
+export const mockEshramSummary: EshramSummaryResponse = {
+  national_total: 28_54_12_000,
+  source: "synthetic",
+  snapshot_date: new Date().toISOString().slice(0, 10),
+  fetched_at: new Date().toISOString(),
+  record_count: 728,
+  state_totals: [
+    { state: "Uttar Pradesh", total: 7_82_34_000 },
+    { state: "Bihar", total: 3_45_67_000 },
+    { state: "West Bengal", total: 2_98_11_000 },
+    { state: "Madhya Pradesh", total: 2_14_55_000 },
+    { state: "Maharashtra", total: 1_87_23_000 },
+    { state: "Rajasthan", total: 1_65_44_000 },
+    { state: "Tamil Nadu", total: 1_23_88_000 },
+    { state: "Gujarat", total: 1_10_32_000 },
+  ],
+  top_districts: [
+    { state: "Uttar Pradesh", district: "Lucknow", registered_workers_total: 3_45_000, male: 2_10_000, female: 1_35_000, age_18_40: 2_00_000, age_40_plus: 1_45_000, sc: 80_000, st: 12_000, obc: 1_80_000, general: 73_000, snapshot_date: new Date().toISOString().slice(0, 10), source: "synthetic", fetched_at: new Date().toISOString() },
+    { state: "Uttar Pradesh", district: "Varanasi", registered_workers_total: 2_89_000, male: 1_78_000, female: 1_11_000, age_18_40: 1_65_000, age_40_plus: 1_24_000, sc: 67_000, st: 8_000, obc: 1_54_000, general: 60_000, snapshot_date: new Date().toISOString().slice(0, 10), source: "synthetic", fetched_at: new Date().toISOString() },
+    { state: "Maharashtra", district: "Mumbai", registered_workers_total: 2_67_000, male: 1_65_000, female: 1_02_000, age_18_40: 1_55_000, age_40_plus: 1_12_000, sc: 45_000, st: 23_000, obc: 1_35_000, general: 64_000, snapshot_date: new Date().toISOString().slice(0, 10), source: "synthetic", fetched_at: new Date().toISOString() },
+    { state: "Bihar", district: "Patna", registered_workers_total: 2_45_000, male: 1_55_000, female: 90_000, age_18_40: 1_40_000, age_40_plus: 1_05_000, sc: 56_000, st: 9_000, obc: 1_30_000, general: 50_000, snapshot_date: new Date().toISOString().slice(0, 10), source: "synthetic", fetched_at: new Date().toISOString() },
+    { state: "Tamil Nadu", district: "Chennai", registered_workers_total: 2_12_000, male: 1_30_000, female: 82_000, age_18_40: 1_22_000, age_40_plus: 90_000, sc: 48_000, st: 6_000, obc: 1_10_000, general: 48_000, snapshot_date: new Date().toISOString().slice(0, 10), source: "synthetic", fetched_at: new Date().toISOString() },
+  ],
+};
+

@@ -25,10 +25,30 @@ class Settings:
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
     ACCESS_PIN: str = os.getenv("ACCESS_PIN", "26246")
     ACCESS_PASSWORD: str = os.getenv("ACCESS_PASSWORD", "zeroone")
-    # Connector credentials (empty until real integrations are authorized)
+
+    # Legacy connector credentials
     NCS_API_KEY: str = os.getenv("NCS_API_KEY", "")
     ESHRAM_API_KEY: str = os.getenv("ESHRAM_API_KEY", "")
     MOSPI_API_KEY: str = os.getenv("MOSPI_API_KEY", "")
+
+    # ── Live data integration ──────────────────────────────────────────────────
+    USE_LIVE_DATA: bool = os.getenv("USE_LIVE_DATA", "true").lower() == "true"
+
+    # data.gov.in / e-Shram
+    DATAGOV_API_KEY: str = os.getenv("DATAGOV_API_KEY", "")
+    ESHRAM_RESOURCE_ID: str = os.getenv("ESHRAM_RESOURCE_ID", "")
+    DATAGOV_BASE_URL: str = os.getenv(
+        "DATAGOV_BASE_URL", "https://api.data.gov.in/resource"
+    )
+    ESHRAM_CACHE_TTL_HOURS: int = int(os.getenv("ESHRAM_CACHE_TTL_HOURS", "24"))
+
+    # News
+    NEWS_PROVIDER: str = os.getenv("NEWS_PROVIDER", "rss")
+    NEWS_API_KEY: str = os.getenv("NEWS_API_KEY", "")
+    NEWS_CACHE_TTL_MINUTES: int = int(os.getenv("NEWS_CACHE_TTL_MINUTES", "30"))
+    NEWS_MAX_ITEMS: int = int(os.getenv("NEWS_MAX_ITEMS", "12"))
+    NEWS_MIN_SCORE: int = int(os.getenv("NEWS_MIN_SCORE", "1"))
+
     # Resolved absolute DB path
     @property
     def DB_URL(self) -> str:
@@ -37,6 +57,16 @@ class Settings:
             p = _ROOT / p
         p.parent.mkdir(parents=True, exist_ok=True)
         return f"sqlite:///{p}"
+
+    @property
+    def eshram_live_ready(self) -> bool:
+        """True if we can attempt a live e-Shram fetch."""
+        return bool(self.DATAGOV_API_KEY and self.ESHRAM_RESOURCE_ID and self.USE_LIVE_DATA)
+
+    @property
+    def news_live_ready(self) -> bool:
+        """True if live news fetching should be attempted."""
+        return self.USE_LIVE_DATA
 
 
 settings = Settings()

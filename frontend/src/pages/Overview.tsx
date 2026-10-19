@@ -10,6 +10,8 @@ import SeverityBadge from "../components/ui/SeverityBadge";
 import DataTable from "../components/ui/DataTable";
 import TrendAreaChart from "../components/charts/TrendAreaChart";
 import SectorBarChart from "../components/charts/SectorBarChart";
+import NewsHighlights from "../components/ui/NewsHighlights";
+import EshramPanel from "../components/ui/EshramPanel";
 import LoginPage from "./LoginPage";
 import type { GapRow, StateMapData } from "../types";
 import type { Column } from "../components/ui/DataTable";
@@ -148,6 +150,12 @@ export default function Overview() {
               />
             )}
           </ChartCard>
+        </div>
+
+        {/* News + e-Shram row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 16 }}>
+          <NewsHighlights variant="card" limit={5} />
+          <EshramPanel />
         </div>
       </div>
     </div>

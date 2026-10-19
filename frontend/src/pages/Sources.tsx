@@ -1,25 +1,41 @@
 import { useTranslation } from "react-i18next";
 import { mockSources } from "../mocks/data";
-import { CheckCircle2, XCircle, Clock, Radio, LogIn } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Radio, LogIn, RefreshCw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSourcesStatus } from "../hooks/useApi";
 import { useNavigate } from "react-router-dom";
+import { refreshEshram, refreshNews } from "../services/api";
+import { useState } from "react";
 
 const STATUS_CONFIG: Record<string, { Icon: typeof CheckCircle2; color: string; bg: string; label: string }> = {
-  live: { Icon: CheckCircle2, color: "#138808", bg: "#f0faf4", label: "Live" },
-  demo: { Icon: Clock, color: "#e67e22", bg: "#fef6ee", label: "Demo / Synthetic" },
-  synthetic: { Icon: Clock, color: "#e67e22", bg: "#fef6ee", label: "Demo / Synthetic" },
+  live:        { Icon: CheckCircle2, color: "#138808", bg: "#f0faf4", label: "Live" },
+  demo:        { Icon: Clock, color: "#e67e22", bg: "#fef6ee", label: "Demo / Synthetic" },
+  synthetic:   { Icon: Clock, color: "#e67e22", bg: "#fef6ee", label: "Demo / Synthetic" },
   unavailable: { Icon: XCircle, color: "#c0392b", bg: "#fdf2f2", label: "Unavailable" },
-  pending: { Icon: Clock, color: "#2980b9", bg: "#eef5fc", label: "Pending Integration" },
+  pending:     { Icon: Clock, color: "#2980b9", bg: "#eef5fc", label: "Pending Integration" },
+  mock:        { Icon: Clock, color: "#7f8c8d", bg: "#f5f5f5", label: "Mock / Stub" },
+  cached:      { Icon: CheckCircle2, color: "#2980b9", bg: "#eef5fc", label: "Cached" },
 };
 
 export default function Sources() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const { data: apiSourcesData, isLoading } = useSourcesStatus(isLoggedIn);
+  const { data: apiSourcesData, isLoading, refetch } = useSourcesStatus(isLoggedIn);
+  const [refreshing, setRefreshing] = useState<string | null>(null);
 
   const isLive = isLoggedIn && !!apiSourcesData?.sources?.length;
+
+  const handleRefresh = async (type: "eshram" | "news") => {
+    setRefreshing(type);
+    try {
+      if (type === "eshram") await refreshEshram();
+      else await refreshNews();
+      await refetch();
+    } catch { /* ignore */ } finally {
+      setRefreshing(null);
+    }
+  };
 
   type DisplaySource = {
     id: string;
@@ -92,6 +108,10 @@ export default function Sources() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {sources.map((src) => {
               const cfg = STATUS_CONFIG[src.status] || STATUS_CONFIG.demo;
+              const isEshram = src.name.toLowerCase().includes("eshram") || src.name.toLowerCase().includes("e-shram");
+              const isNews = src.name.toLowerCase().includes("news");
+              const canRefresh = isLoggedIn && (isEshram || isNews);
+              const isRefreshing = refreshing === (isEshram ? "eshram" : "news");
               return (
                 <div key={src.id} style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", padding: "16px 20px", boxShadow: "var(--shadow-sm)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
                   <div style={{ flex: 1 }}>
@@ -99,6 +119,17 @@ export default function Sources() {
                       <cfg.Icon size={16} color={cfg.color} />
                       <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>{src.name}</span>
                       <span style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}40`, borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>{cfg.label}</span>
+                      {canRefresh && (
+                        <button
+                          onClick={() => handleRefresh(isEshram ? "eshram" : "news")}
+                          disabled={!!refreshing}
+                          aria-label={`Refresh ${isEshram ? "e-Shram" : "news"} data`}
+                          style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", fontSize: 11, fontWeight: 600, background: "transparent", border: "1px solid var(--color-primary)", color: "var(--color-primary)", borderRadius: 4, cursor: refreshing ? "wait" : "pointer", opacity: refreshing ? 0.6 : 1 }}
+                        >
+                          <RefreshCw size={11} style={{ animation: isRefreshing ? "spin 1s linear infinite" : "none" }} />
+                          Refresh now
+                        </button>
+                      )}
                     </div>
                     <p style={{ fontSize: 12, color: "var(--color-text-secondary)", margin: "0 0 8px", lineHeight: 1.6 }}>{src.description}</p>
                     <div style={{ fontSize: 11, color: "var(--color-text-muted)", fontStyle: "italic" }}>{src.coverageNote}</div>
