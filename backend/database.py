@@ -1,4 +1,4 @@
-"""
+﻿"""
 database.py — SQLAlchemy engine, session and table initialisation for AI-LMIS.
 """
 from sqlalchemy import create_engine
@@ -32,3 +32,11 @@ def init_db():
     """Create all tables if they do not already exist."""
     import models  # noqa: F401 — ensure all models are registered
     Base.metadata.create_all(bind=engine)
+    # create_all does not add columns to existing SQLite databases.
+    with engine.begin() as connection:
+        columns = connection.exec_driver_sql("PRAGMA table_info(demand_signals)").fetchall()
+        if columns and "provenance" not in {row[1] for row in columns}:
+            connection.exec_driver_sql(
+                "ALTER TABLE demand_signals ADD COLUMN provenance VARCHAR(40) "
+                "NOT NULL DEFAULT 'synthetic_demo'"
+            )

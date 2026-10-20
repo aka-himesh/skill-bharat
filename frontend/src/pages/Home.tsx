@@ -22,7 +22,7 @@ export default function Home() {
   const { config } = useConfig();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const { data: summaryData, isLoading, isError } = useSummary(isLoggedIn);
+  const { data: summaryData, isLoading, isError } = useSummary(undefined, isLoggedIn);
 
   // Use real data if available, fallback to mock for display
   const useMock = import.meta.env.VITE_USE_MOCK === "true";

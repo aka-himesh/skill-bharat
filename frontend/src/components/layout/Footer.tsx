@@ -43,13 +43,13 @@ export default function Footer() {
           <div>
             <div style={{ color: "#fff", fontWeight: 600, marginBottom: 8, fontSize: 13 }}>Data Notice</div>
             <div style={{ fontSize: 11, lineHeight: 1.6, color: "#6a7d95" }}>
-              All data shown is synthetic, generated for demonstration purposes in support of SIH 2026. Not for policy use.
+              Dashboard demand, gap and forecast indicators are synthetic demonstration data. External source status is reported separately below.
             </div>
           </div>
         </div>
         <div style={{ borderTop: "1px solid #2a3a50", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <div style={{ fontSize: 11 }}>© {year} AI-LMIS · Built for Ministry of Skill Development &amp; Entrepreneurship</div>
-          <div style={{ fontSize: 11 }}>{t("common.lastUpdated")}: 17 Oct 2026 · <span style={{ color: "#f5a623" }}>Demo data — synthetic</span></div>
+          <div style={{ fontSize: 11 }}>{t("common.lastUpdated")}: <span style={{ color: "#f5a623" }}>{config.dataStatusLabel || "Source status unavailable"}</span></div>
         </div>
       </div>
     </footer>

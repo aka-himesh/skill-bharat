@@ -24,7 +24,7 @@ from dateutil.relativedelta import relativedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import settings
-from database import init_db, SessionLocal
+import database
 from models import (
     State, District, Sector, Occupation,
     TrainingCentre, TrainingCapacity,
@@ -235,8 +235,8 @@ def run():
     print("Random seed: 42 | Idempotent | All data is SYNTHETIC")
     print("=" * 60)
 
-    init_db()
-    session = SessionLocal()
+    database.init_db()
+    session = database.SessionLocal()
 
     try:
         counts = {
@@ -408,6 +408,7 @@ def run():
                                     "raw_value": val,
                                     "normalized_value": None,  # set by pipeline
                                     "is_synthetic": 1,
+                                    "provenance": "synthetic_demo",
                                 })
 
             # Batch insert in chunks
@@ -415,8 +416,8 @@ def run():
             for i in range(0, len(ds_rows), chunk):
                 session.execute(
                     text("""INSERT INTO demand_signals
-                        (district_id, occupation_id, source_name, month, raw_value, normalized_value, is_synthetic)
-                        VALUES (:district_id, :occupation_id, :source_name, :month, :raw_value, :normalized_value, :is_synthetic)
+                        (district_id, occupation_id, source_name, month, raw_value, normalized_value, is_synthetic, provenance)
+                        VALUES (:district_id, :occupation_id, :source_name, :month, :raw_value, :normalized_value, :is_synthetic, :provenance)
                     """),
                     ds_rows[i:i+chunk]
                 )

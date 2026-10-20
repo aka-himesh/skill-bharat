@@ -3,6 +3,7 @@ export interface AppConfig {
   appName: string;
   appShortName: string;
   appTagline: string;
+  dataStatusLabel?: string;
 }
 
 export interface GeoState {
@@ -176,6 +177,7 @@ export interface Filters {
   ncoCode?: string;
   nsqfLevel?: string;
   horizon?: string;
+  q?: string;
 }
 
 export interface StateMapData {

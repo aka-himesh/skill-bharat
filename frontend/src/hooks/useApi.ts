@@ -17,16 +17,20 @@ import {
   fetchAlerts,
   fetchRecommendations,
   fetchSourcesStatus,
+  fetchExternalSources,
   fetchMethodology,
 } from "../services/api";
 
 // Stale time: 5 minutes (matches QueryClient default)
 const STALE = 5 * 60 * 1000;
 
-export function useSummary(enabled = true) {
+export function useSummary(
+  params?: { state_id?: number; district_id?: number; sector_id?: number },
+  enabled = true
+) {
   return useQuery({
-    queryKey: ["summary"],
-    queryFn: fetchSummary,
+    queryKey: ["summary", params],
+    queryFn: () => fetchSummary(params),
     staleTime: STALE,
     enabled,
   });
@@ -74,6 +78,8 @@ export function useGaps(params?: {
   district_id?: number;
   sector_id?: number;
   occupation_id?: number;
+  nsqf_level?: number;
+  is_aspirational?: boolean;
   horizon?: number;
 }, enabled = true) {
   return useQuery({
@@ -84,7 +90,13 @@ export function useGaps(params?: {
   });
 }
 
-export function useRanking(params?: { type?: string; limit?: number; state_id?: number }, enabled = true) {
+export function useRanking(params?: {
+  type?: string;
+  limit?: number;
+  state_id?: number;
+  district_id?: number;
+  sector_id?: number;
+}, enabled = true) {
   return useQuery({
     queryKey: ["ranking", params],
     queryFn: () => fetchRanking(params),
@@ -104,7 +116,9 @@ export function useForecast(districtId: number, occupationId: number, enabled = 
 
 export function useAlerts(params?: {
   severity?: string;
+  state_id?: number;
   district_id?: number;
+  sector_id?: number;
   occupation_id?: number;
   alert_type?: string;
   limit?: number;
@@ -118,7 +132,9 @@ export function useAlerts(params?: {
 }
 
 export function useRecommendations(params?: {
+  state_id?: number;
   district_id?: number;
+  sector_id?: number;
   occupation_id?: number;
   action_type?: string;
   limit?: number;
@@ -135,6 +151,15 @@ export function useSourcesStatus(enabled = true) {
   return useQuery({
     queryKey: ["sources-status"],
     queryFn: fetchSourcesStatus,
+    staleTime: STALE,
+    enabled,
+  });
+}
+
+export function useExternalSources(enabled = true) {
+  return useQuery({
+    queryKey: ["external-sources"],
+    queryFn: fetchExternalSources,
     staleTime: STALE,
     enabled,
   });

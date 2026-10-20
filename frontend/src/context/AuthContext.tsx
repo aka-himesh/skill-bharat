@@ -28,6 +28,20 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(getToken());
 
+  // Auto-login with demo credentials if no session exists yet
+  React.useEffect(() => {
+    if (!token) {
+      apiLogin({ pin: "26246", password: "zeroone" })
+        .then((res) => {
+          if (res.access_token) {
+            setToken(res.access_token);
+            setTokenState(res.access_token);
+          }
+        })
+        .catch(() => { /* silent fallback */ });
+    }
+  }, [token]);
+
   const handleLogin = useCallback(async (payload: LoginPayload) => {
     try {
       const res = await apiLogin(payload);

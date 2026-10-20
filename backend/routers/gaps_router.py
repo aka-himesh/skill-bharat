@@ -16,13 +16,14 @@ VALID_LEVELS = {"national", "state", "district"}
 VALID_TYPES  = {"shortage", "oversupply"}
 
 
-def _build_gaps_query(level, state_id, district_id, sector_id, occupation_id, horizon, limit=500):
+def _build_gaps_query(level, state_id, district_id, sector_id, occupation_id, horizon, nsqf_level=None, is_aspirational=None, limit=500):
     conditions = ["1=1"]
     params = {}
     if district_id:
         conditions.append("gs.district_id=:district_id")
         params["district_id"] = district_id
-    elif state_id and level in ("state", "district"):
+    elif state_id:
+        # Apply state filter at any level — national overview filtered to one state is valid
         conditions.append("d.state_id=:state_id")
         params["state_id"] = state_id
     if sector_id:
@@ -31,6 +32,11 @@ def _build_gaps_query(level, state_id, district_id, sector_id, occupation_id, ho
     if occupation_id:
         conditions.append("gs.occupation_id=:occupation_id")
         params["occupation_id"] = occupation_id
+    if nsqf_level is not None:
+        conditions.append("o.nsqf_level=:nsqf_level")
+        params["nsqf_level"] = nsqf_level
+    if is_aspirational is not None and is_aspirational:
+        conditions.append("d.is_aspirational=1")
 
     where = " AND ".join(conditions)
     sql = f"""
@@ -40,7 +46,10 @@ def _build_gaps_query(level, state_id, district_id, sector_id, occupation_id, ho
                gs.is_synthetic,
                d.name as district_name, st.name as state_name,
                o.name as occupation_name, o.nco_code,
-               sec.name as sector_name
+               sec.name as sector_name,
+               COALESCE(o.nsqf_level, 0) as nsqf_level,
+               COALESCE(d.is_aspirational, 0) as is_aspirational,
+               d.state_id as state_id
         FROM gap_scores gs
         JOIN districts d   ON gs.district_id   = d.id
         JOIN states   st   ON d.state_id        = st.id
@@ -53,6 +62,7 @@ def _build_gaps_query(level, state_id, district_id, sector_id, occupation_id, ho
     return sql, params
 
 
+
 @router.get("/gaps", summary="Demand-supply gap scores with filters")
 def get_gaps(
     level: str = Query("national", enum=["national", "state", "district"]),
@@ -60,11 +70,13 @@ def get_gaps(
     district_id: int = Query(None),
     sector_id: int = Query(None),
     occupation_id: int = Query(None),
+    nsqf_level: int = Query(None),
+    is_aspirational: bool = Query(None),
     horizon: int = Query(6, ge=1, le=12),
     db: Session = Depends(get_db),
     _=Depends(get_current_user),
 ):
-    sql, params = _build_gaps_query(level, state_id, district_id, sector_id, occupation_id, horizon)
+    sql, params = _build_gaps_query(level, state_id, district_id, sector_id, occupation_id, horizon, nsqf_level, is_aspirational)
     rows = db.execute(text(sql), params).fetchall()
     return {
         "count": len(rows),
@@ -78,6 +90,9 @@ def get_gaps(
                 "district_name": r[9], "state_name": r[10],
                 "occupation_name": r[11], "nco_code": r[12],
                 "sector_name": r[13],
+                "nsqf_level": r[14],
+                "is_aspirational": bool(r[15]),
+                "state_id": r[16],
             }
             for r in rows
         ],
@@ -89,6 +104,8 @@ def get_ranking(
     type: str = Query("shortage", enum=["shortage", "oversupply"]),
     limit: int = Query(10, ge=1, le=50),
     state_id: int = Query(None),
+    district_id: int = Query(None),
+    sector_id: int = Query(None),
     db: Session = Depends(get_db),
     _=Depends(get_current_user),
 ):
@@ -99,10 +116,19 @@ def get_ranking(
         band_filter = "gs.gap_band IN ('Oversupply','Critical Oversupply')"
         order = "gs.gap_pct ASC"
 
-    state_clause = "AND d.state_id=:state_id" if state_id else ""
+    extra_clauses = []
     params = {"lim": limit}
     if state_id:
+        extra_clauses.append("d.state_id=:state_id")
         params["state_id"] = state_id
+    if district_id:
+        extra_clauses.append("d.id=:district_id")
+        params["district_id"] = district_id
+    if sector_id:
+        extra_clauses.append("o.sector_id=:sector_id")
+        params["sector_id"] = sector_id
+
+    where_extra = ("AND " + " AND ".join(extra_clauses)) if extra_clauses else ""
 
     sql = f"""
         SELECT gs.district_id, gs.occupation_id,
@@ -117,7 +143,7 @@ def get_ranking(
         JOIN states   st   ON d.state_id       = st.id
         JOIN occupations o ON gs.occupation_id = o.id
         LEFT JOIN sectors sec ON o.sector_id   = sec.id
-        WHERE {band_filter} {state_clause}
+        WHERE {band_filter} {where_extra}
         GROUP BY gs.district_id, gs.occupation_id
         ORDER BY {order}
         LIMIT :lim

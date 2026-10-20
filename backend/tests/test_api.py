@@ -16,8 +16,12 @@ import database as db_module
 
 @pytest.fixture(scope="module")
 def client():
-    """Set up in-memory DB, seed, pipeline, return TestClient."""
-    engine = sqlalchemy.create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    from sqlalchemy.pool import StaticPool
+    engine = sqlalchemy.create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(bind=engine)
     TS = sessionmaker(bind=engine)
 
@@ -195,7 +199,31 @@ def test_sources_status(client):
     resp = client.get("/api/sources/status", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["total"] == 5
+    assert data["total"] >= 5  # Includes the legacy connectors plus live e-Shram/news entries.
+
+
+def test_external_source_status_requires_login(client):
+    assert client.get("/api/v1/system/sources").status_code == 401
+    token = _get_token(client)
+    response = client.get("/api/v1/system/sources", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert {item["source"] for item in response.json()["sources"]} == {
+        "live_mospi", "live_ncs", "live_datagov"
+    }
+
+
+def test_unconfigured_ncs_test_does_not_make_request(client, monkeypatch):
+    from config import settings
+    monkeypatch.setattr(settings, "NCS_API_BASE_URL", "")
+    monkeypatch.setattr(settings, "NCS_API_KEY", "")
+    token = _get_token(client)
+    response = client.post(
+        "/api/v1/admin/sources/live_ncs/test",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "NOT_CONFIGURED"
+    assert "NCS_API_KEY" not in response.text
 
 
 def test_methodology(client):

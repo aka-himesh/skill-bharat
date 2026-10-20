@@ -10,7 +10,27 @@ from dotenv import load_dotenv
 
 # Load .env from project root (two levels up from backend/)
 _ROOT = Path(__file__).resolve().parent.parent
+# backend/.env is the preferred credential file; root .env remains supported for older setups.
+load_dotenv(_ROOT / "backend" / ".env", override=False)
 load_dotenv(_ROOT / ".env", override=False)
+
+
+def _optional_int(name: str, default: int, minimum: int = 0) -> int:
+    raw = os.getenv(name, str(default)).strip()
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+    if value < minimum:
+        raise ValueError(f"{name} must be >= {minimum}")
+    return value
+
+
+def _base_url(name: str, default: str = "") -> str:
+    value = os.getenv(name, default).strip().rstrip("/")
+    if value and not value.startswith(("https://", "http://")):
+        raise ValueError(f"{name} must be an http(s) URL")
+    return value
 
 
 class Settings:
@@ -26,20 +46,26 @@ class Settings:
     ACCESS_PIN: str = os.getenv("ACCESS_PIN", "26246")
     ACCESS_PASSWORD: str = os.getenv("ACCESS_PASSWORD", "zeroone")
 
-    # Legacy connector credentials
-    NCS_API_KEY: str = os.getenv("NCS_API_KEY", "")
-    ESHRAM_API_KEY: str = os.getenv("ESHRAM_API_KEY", "")
-    MOSPI_API_KEY: str = os.getenv("MOSPI_API_KEY", "")
+    # Optional external source credentials. Values are never logged or returned by APIs.
+    MOSPI_API_BASE_URL: str = _base_url("MOSPI_API_BASE_URL", "https://api.mospi.gov.in")
+    MOSPI_API_KEY: str = os.getenv("MOSPI_API_KEY", "").strip()
+    NCS_API_BASE_URL: str = _base_url("NCS_API_BASE_URL")
+    NCS_API_KEY: str = os.getenv("NCS_API_KEY", "").strip()
+    DATA_GOV_IN_API_KEY: str = os.getenv("DATA_GOV_IN_API_KEY", os.getenv("DATAGOV_API_KEY", "")).strip()
+    EXTERNAL_CACHE_TTL_HOURS: int = _optional_int("EXTERNAL_CACHE_TTL_HOURS", 24, 1)
+    EXTERNAL_REQUEST_TIMEOUT_MS: int = _optional_int("EXTERNAL_REQUEST_TIMEOUT_MS", 10000, 100)
+    EXTERNAL_MAX_RETRIES: int = _optional_int("EXTERNAL_MAX_RETRIES", 2, 0)
+
+    # Backwards-compatible source aliases.
+    DATAGOV_API_KEY: str = DATA_GOV_IN_API_KEY
+    ESHRAM_API_KEY: str = os.getenv("ESHRAM_API_KEY", "").strip()
 
     # ── Live data integration ──────────────────────────────────────────────────
     USE_LIVE_DATA: bool = os.getenv("USE_LIVE_DATA", "true").lower() == "true"
 
     # data.gov.in / e-Shram
-    DATAGOV_API_KEY: str = os.getenv("DATAGOV_API_KEY", "")
-    ESHRAM_RESOURCE_ID: str = os.getenv("ESHRAM_RESOURCE_ID", "")
-    DATAGOV_BASE_URL: str = os.getenv(
-        "DATAGOV_BASE_URL", "https://api.data.gov.in/resource"
-    )
+    ESHRAM_RESOURCE_ID: str = os.getenv("ESHRAM_RESOURCE_ID", "").strip()
+    DATAGOV_BASE_URL: str = _base_url("DATAGOV_BASE_URL", "https://api.data.gov.in/resource")
     ESHRAM_CACHE_TTL_HOURS: int = int(os.getenv("ESHRAM_CACHE_TTL_HOURS", "24"))
 
     # News
@@ -61,7 +87,7 @@ class Settings:
     @property
     def eshram_live_ready(self) -> bool:
         """True if we can attempt a live e-Shram fetch."""
-        return bool(self.DATAGOV_API_KEY and self.ESHRAM_RESOURCE_ID and self.USE_LIVE_DATA)
+        return bool(self.DATA_GOV_IN_API_KEY and self.ESHRAM_RESOURCE_ID and self.USE_LIVE_DATA)
 
     @property
     def news_live_ready(self) -> bool:

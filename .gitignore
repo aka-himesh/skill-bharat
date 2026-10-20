@@ -1,23 +1,26 @@
 # Python generated files
 __pycache__/
 *.py[cod]
+*$py.class
 .venv/
 venv/
+ENV/
+env/
 
-# Environment variables and secrets
+# Environment variables and secrets (Never commit these!)
 .env
+.env.local
 .env.*
 !.env.example
 
-# Local database files
-backend/data/*.db
-backend/data/*.db-journal
-backend/data/*.db-wal
-backend/data/*.db-shm
 
 # Frontend dependencies and build output
 node_modules/
 dist/
+.next/
+.nuxt/
 
-# Logs
+# Logs and OS files
 *.log
+.DS_Store
+Thumbs.db

@@ -94,6 +94,15 @@ uvicorn main:app --reload --port 8000
 ```
 Interactive API docs are available at: `http://localhost:8000/api/docs`.
 
+### 4. Start the Frontend (separate terminal)
+The Vite development server proxies `/api/*` requests to the FastAPI server on port 8000. Keep both processes running while using the site; if FastAPI is stopped, the browser will show `502 Bad Gateway` for API requests.
+```bash
+cd frontend
+npm install
+npm run dev -- --host 127.0.0.1
+```
+Open `http://localhost:5173`. Check `http://127.0.0.1:8000/health` if API requests return 502.
+
 ---
 
 ## 📊 Endpoints Overview

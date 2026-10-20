@@ -150,3 +150,224 @@ body {
 
 /* Zebra rows */
 .zebra-row:nth-child(even) { background-color: var(--color-surface-alt); }
+
+/* ── FilterBar ───────────────────────────────────────────────────────── */
+.filter-bar {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-bar__inner {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 8px 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-bar__icon-col {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-primary);
+  padding-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.filter-bar__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.filter-bar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+.filter-bar__divider {
+  width: 1px;
+  height: 28px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  align-self: center;
+  margin: 0 2px;
+}
+
+/* ── Individual filter field ── */
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+}
+
+.filter-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+
+.filter-select {
+  height: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  appearance: auto;
+}
+
+.filter-select:hover:not(:disabled) {
+  border-color: var(--color-primary-light);
+}
+
+.filter-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(26, 58, 107, 0.15);
+}
+
+.filter-select--disabled,
+.filter-select:disabled {
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  border-color: var(--color-border);
+  opacity: 0.65;
+}
+
+/* ── Aspirational checkbox ── */
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.filter-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.filter-checkbox__text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── Clear button ── */
+.filter-clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-family);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+  align-self: flex-end;
+  white-space: nowrap;
+}
+
+.filter-clear-btn--active {
+  background: var(--color-critical-shortage);
+  color: #fff;
+  border-color: var(--color-critical-shortage);
+  cursor: pointer;
+  opacity: 1;
+}
+
+.filter-clear-btn--active:hover {
+  background: #a93226;
+  border-color: #a93226;
+}
+
+/* ── Active filter chips row ── */
+.filter-chips {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 4px 24px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  animation: chip-in 0.15s ease;
+}
+
+.filter-chip--accent {
+  background: var(--color-accent);
+}
+
+.filter-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.25);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  flex-shrink: 0;
+}
+
+.filter-chip__remove:hover {
+  background: rgba(255,255,255,0.45);
+}
+
+@keyframes chip-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+

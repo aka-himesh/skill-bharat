@@ -1,0 +1,26 @@
+{
+  "source": "MoSPI e-Sankhyiki PLFS API",
+  "captured_without_api_key": true,
+  "response": {
+    "data": [
+      {
+        "year_type": "Calendar Year",
+        "year": "2022",
+        "frequency": "Annually",
+        "indicator": "UR (Unemployment Rate, in per cent)",
+        "state": "All India",
+        "gender": "male",
+        "sector": "rural",
+        "AgeGroup": "15 years and above",
+        "weekly_status": "PS+SS",
+        "religion": "all",
+        "socialGroup": "scheduled tribe",
+        "General_Education": "all",
+        "quarter": null,
+        "month": null,
+        "value": "1.9",
+        "unit": "%"
+      }
+    ]
+  }
+}

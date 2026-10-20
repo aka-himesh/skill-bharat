@@ -2,9 +2,9 @@ import { useTranslation } from "react-i18next";
 import { mockSources } from "../mocks/data";
 import { CheckCircle2, XCircle, Clock, Radio, LogIn, RefreshCw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useSourcesStatus } from "../hooks/useApi";
+import { useExternalSources, useSourcesStatus } from "../hooks/useApi";
 import { useNavigate } from "react-router-dom";
-import { refreshEshram, refreshNews } from "../services/api";
+import { refreshEshram, refreshNews, testExternalSource } from "../services/api";
 import { useState } from "react";
 
 const STATUS_CONFIG: Record<string, { Icon: typeof CheckCircle2; color: string; bg: string; label: string }> = {
@@ -15,6 +15,9 @@ const STATUS_CONFIG: Record<string, { Icon: typeof CheckCircle2; color: string; 
   pending:     { Icon: Clock, color: "#2980b9", bg: "#eef5fc", label: "Pending Integration" },
   mock:        { Icon: Clock, color: "#7f8c8d", bg: "#f5f5f5", label: "Mock / Stub" },
   cached:      { Icon: CheckCircle2, color: "#2980b9", bg: "#eef5fc", label: "Cached" },
+  not_configured: { Icon: Clock, color: "#e67e22", bg: "#fef6ee", label: "Not configured" },
+  stale:       { Icon: Clock, color: "#e67e22", bg: "#fef6ee", label: "Stale cache" },
+  error:       { Icon: XCircle, color: "#c0392b", bg: "#fdf2f2", label: "Error" },
 };
 
 export default function Sources() {
@@ -22,7 +25,10 @@ export default function Sources() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const { data: apiSourcesData, isLoading, refetch } = useSourcesStatus(isLoggedIn);
+  const { data: externalData, isLoading: externalLoading, refetch: refetchExternal } = useExternalSources(isLoggedIn);
   const [refreshing, setRefreshing] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, string>>({});
 
   const isLive = isLoggedIn && !!apiSourcesData?.sources?.length;
 
@@ -34,6 +40,19 @@ export default function Sources() {
       await refetch();
     } catch { /* ignore */ } finally {
       setRefreshing(null);
+    }
+  };
+
+  const handleTest = async (source: string) => {
+    setTesting(source);
+    try {
+      const result = await testExternalSource(source);
+      setTestResults((current) => ({ ...current, [source]: `${result.message} (${result.latency_ms} ms${result.http_status ? `, HTTP ${result.http_status}` : ""})` }));
+      await refetchExternal();
+    } catch (error) {
+      setTestResults((current) => ({ ...current, [source]: error instanceof Error ? error.message : "Connection test failed." }));
+    } finally {
+      setTesting(null);
     }
   };
 
@@ -92,6 +111,40 @@ export default function Sources() {
         </div>
       </div>
       <div style={{ maxWidth: "var(--container-max)", margin: "0 auto", padding: "20px 24px" }}>
+        <section aria-labelledby="external-sources-title" style={{ marginBottom: 24 }}>
+          <h2 id="external-sources-title" style={{ fontSize: 16, margin: "0 0 8px" }}>External data sources</h2>
+          <p style={{ color: "var(--color-text-secondary)", fontSize: 12, margin: "0 0 12px" }}>
+            Credentials are managed by the backend. This panel never displays keys.
+          </p>
+          {!isLoggedIn ? (
+            <p style={{ color: "var(--color-text-muted)", fontSize: 12 }}>Log in to view connector status and test connections.</p>
+          ) : externalLoading ? (
+            <p style={{ color: "var(--color-text-muted)", fontSize: 12 }}>Loading external source status…</p>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 12 }}>
+              {(externalData?.sources || []).map((source) => {
+                const statusKey = source.status.toLowerCase();
+                const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.unavailable;
+                return (
+                  <article key={source.source} style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", padding: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                      <strong style={{ fontSize: 13 }}>{source.name}</strong>
+                      <span style={{ color: cfg.color, background: cfg.bg, borderRadius: 20, padding: "3px 8px", fontSize: 10, fontWeight: 700 }}>{source.status}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 8 }}>{source.configured ? "Configured" : "Not configured: see README"}</div>
+                    <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4 }}>Provenance: {source.provenance}</div>
+                    <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4 }}>Last fetched: {source.last_fetched_at ? new Date(source.last_fetched_at).toLocaleString("en-IN") : "Never"}</div>
+                    <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 6 }}>{source.message}</div>
+                    <button onClick={() => handleTest(source.source)} disabled={!!testing} style={{ marginTop: 10, padding: "5px 10px", fontSize: 11, cursor: testing ? "wait" : "pointer" }}>
+                      {testing === source.source ? "Testing…" : "Test connection"}
+                    </button>
+                    {testResults[source.source] && <div role="status" style={{ fontSize: 11, marginTop: 6 }}>{testResults[source.source]}</div>}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
         <div style={{ marginBottom: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
           {Object.entries(STATUS_CONFIG).map(([k, v]) => (
             <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, background: v.bg, border: `1px solid ${v.color}40`, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>

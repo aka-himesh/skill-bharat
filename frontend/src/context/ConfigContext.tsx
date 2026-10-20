@@ -39,6 +39,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
           appName: data.app_name,
           appShortName: data.app_short_name,
           appTagline: data.app_tagline,
+          dataStatusLabel: data.data_status_label,
         });
         setError(null);
       })

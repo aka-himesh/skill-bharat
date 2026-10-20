@@ -1,4 +1,4 @@
-"""
+﻿"""
 eshram.py — Live e-Shram connector via data.gov.in API.
 
 ROLE IN THE PIPELINE:
@@ -250,7 +250,7 @@ class EshramLiveConnector:
         try:
             return self._fetch_live(state=state)
         except Exception as e:
-            logger.warning("[eshram] Live fetch failed: %s — trying cache", e)
+            logger.warning("[eshram] Live fetch failed (%s); trying cache", type(e).__name__)
 
         # Try cache
         try:
@@ -258,7 +258,7 @@ class EshramLiveConnector:
             if cached:
                 return cached
         except Exception as e:
-            logger.warning("[eshram] Cache load failed: %s — using synthetic", e)
+            logger.warning("[eshram] Cache load failed (%s); using synthetic", type(e).__name__)
 
         return _build_synthetic()
 
@@ -272,7 +272,7 @@ class EshramLiveConnector:
 
         while True:
             params: dict[str, Any] = {
-                "api-key": settings.DATAGOV_API_KEY,
+                "api-key": settings.DATA_GOV_IN_API_KEY,
                 "format": "json",
                 "limit": limit,
                 "offset": offset,
@@ -390,7 +390,7 @@ class EshramLiveConnector:
             db.commit()
             db.close()
         except Exception as e:
-            logger.warning("[eshram] Cache save error: %s", e)
+            logger.warning("[eshram] Cache save failed (%s).", type(e).__name__)
 
     def _load_from_cache(self) -> dict | None:
         """Load from SQLite cache if not expired."""
@@ -415,7 +415,7 @@ class EshramLiveConnector:
             data["source"] = "cached"
             return data
         except Exception as e:
-            logger.warning("[eshram] Cache load error: %s", e)
+            logger.warning("[eshram] Cache load failed (%s).", type(e).__name__)
             return None
 
     def get_unmatched_districts(self, canonical_districts: list[str]) -> list[dict]:

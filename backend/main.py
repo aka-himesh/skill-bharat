@@ -1,4 +1,4 @@
-"""
+﻿"""
 main.py — FastAPI application entry point for AI-LMIS.
 
 Authentication: All /api/* routes require JWT except /api/config and /api/auth/*.
@@ -30,6 +30,7 @@ from routers.recommendations_router import router as recommendations_router
 from routers.sources_router import router as sources_router
 from routers.eshram_router import router as eshram_router
 from routers.news_router import router as news_router
+from routers.external_sources_router import router as external_sources_router
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,14 @@ async def lifespan(app: FastAPI):
     # 1. Create tables synchronously (fast)
     init_db()
 
+    # Report readiness only; never print credential values or request URLs.
+    logger.info(
+        "[sources] MoSPI=%s NCS=%s data.gov.in=%s",
+        "CONFIGURED" if settings.MOSPI_API_BASE_URL else "NOT_CONFIGURED",
+        "CONFIGURED" if settings.NCS_API_BASE_URL and settings.NCS_API_KEY else "NOT_CONFIGURED",
+        "CONFIGURED" if settings.DATA_GOV_IN_API_KEY and settings.ESHRAM_RESOURCE_ID else "NOT_CONFIGURED",
+    )
+
     # 2. Wire eshram connector to DB session factory immediately
     from connectors.eshram import eshram_connector
     eshram_connector.set_db(SessionLocal)
@@ -122,7 +131,7 @@ async def lifespan(app: FastAPI):
                 data = eshram_connector._fetch_live()
                 logger.info("[startup] Initial e-Shram: %d records", len(data.get("rows", [])))
             except Exception as e:
-                logger.warning("[startup] e-Shram initial fetch failed: %s", e)
+                logger.warning("[startup] e-Shram initial fetch failed (%s)", type(e).__name__)
         threading.Thread(target=_initial_eshram, daemon=True, name="eshram-initial").start()
 
     # 5. Start scheduler
@@ -175,6 +184,7 @@ app.include_router(recommendations_router)
 app.include_router(sources_router)
 app.include_router(eshram_router)
 app.include_router(news_router)
+app.include_router(external_sources_router)
 
 
 @app.get("/", include_in_schema=False)

@@ -1,4 +1,4 @@
-"""
+﻿"""
 models.py — SQLAlchemy ORM models for AI-LMIS.
 
 All tables keep raw/imported data separate from derived/analytical results.
@@ -105,6 +105,7 @@ class DemandSignal(Base):
     raw_value = Column(Float)
     normalized_value = Column(Float)
     is_synthetic = Column(Boolean, default=True)
+    provenance = Column(String(40), nullable=False, default="synthetic_demo", server_default="synthetic_demo")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (
@@ -266,6 +267,16 @@ class ApiCache(Base):
     payload_json = Column(Text, nullable=False)
     fetched_at = Column(String(50), nullable=False)   # ISO datetime string
     ttl_hours = Column(Float, default=24.0)
+
+
+class ExternalCache(Base):
+    """Successful API payloads keyed by source and a non-secret request hash."""
+    __tablename__ = "external_cache"
+    source = Column(String(50), primary_key=True)
+    request_hash = Column(String(64), primary_key=True)
+    payload = Column(Text, nullable=False)
+    fetched_at = Column(String(50), nullable=False)
+    expires_at = Column(String(50), nullable=False, index=True)
 
 
 # ─── e-Shram snapshots ────────────────────────────────────────────────────────

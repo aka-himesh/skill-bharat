@@ -1,4 +1,4 @@
-"""
+﻿"""
 news_filter.py — Keyword filtering and scoring for labour/skilling news.
 
 Scoring formula:
@@ -149,7 +149,7 @@ def get_news(limit: int | None = None, q: str | None = None) -> dict:
             provider_name = provider.name
             source = "live" if provider_name != "seed" else "synthetic"
         except Exception as e:
-            logger.warning("[news_filter] Provider fetch failed: %s", e)
+            logger.warning("[news_filter] Provider fetch failed (%s).", type(e).__name__)
 
     if not raw_items:
         # Seed fallback

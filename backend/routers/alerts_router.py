@@ -12,7 +12,9 @@ router = APIRouter(prefix="/api", tags=["alerts"])
 @router.get("/alerts", summary="List early warning alerts with optional filters")
 def list_alerts(
     severity: str = Query(None, enum=["low", "medium", "high", "critical"]),
+    state_id: int = Query(None),
     district_id: int = Query(None),
+    sector_id: int = Query(None),
     occupation_id: int = Query(None),
     alert_type: str = Query(None),
     limit: int = Query(100, le=500),
@@ -24,9 +26,15 @@ def list_alerts(
     if severity:
         conditions.append("a.severity=:severity")
         params["severity"] = severity
+    if state_id:
+        conditions.append("d.state_id=:state_id")
+        params["state_id"] = state_id
     if district_id:
         conditions.append("a.district_id=:district_id")
         params["district_id"] = district_id
+    if sector_id:
+        conditions.append("o.sector_id=:sector_id")
+        params["sector_id"] = sector_id
     if occupation_id:
         conditions.append("a.occupation_id=:occupation_id")
         params["occupation_id"] = occupation_id

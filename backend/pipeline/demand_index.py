@@ -54,6 +54,23 @@ def run(db=None):
     print("  [demand_index] Loading demand signals...")
 
     try:
+        # A live connector must never make seeded demo rows look like live input.
+        # When a source is live, only rows bearing its matching provenance count.
+        live_provenance = {}
+        try:
+            from adapters.source_registry import get_source_statuses
+            for status in get_source_statuses():
+                if status.get("status") in {"LIVE", "CACHED", "STALE"}:
+                    if status["source"] == "live_mospi":
+                        live_provenance["plfs"] = "live_mospi"
+                    elif status["source"] == "live_ncs":
+                        live_provenance["ncs"] = "live_ncs"
+                    elif status["source"] == "live_datagov":
+                        live_provenance["eshram"] = "live_datagov"
+        except Exception:
+            # Preserve normal demo operation if connector status cannot be read.
+            live_provenance = {}
+
         # Get all distinct (district_id, occupation_id) combos
         combos = db.execute(text(
             "SELECT DISTINCT district_id, occupation_id FROM demand_signals"
@@ -70,9 +87,15 @@ def run(db=None):
         print("  [demand_index] Computing global normalization ranges...")
         source_ranges = {}
         for src in SOURCE_WEIGHTS:
-            rows = db.execute(text(
-                "SELECT raw_value FROM demand_signals WHERE source_name=:src AND raw_value IS NOT NULL"
-            ), {"src": src}).fetchall()
+            required_provenance = live_provenance.get(src)
+            if required_provenance:
+                rows = db.execute(text(
+                    "SELECT raw_value FROM demand_signals WHERE source_name=:src AND provenance=:provenance AND raw_value IS NOT NULL"
+                ), {"src": src, "provenance": required_provenance}).fetchall()
+            else:
+                rows = db.execute(text(
+                    "SELECT raw_value FROM demand_signals WHERE source_name=:src AND raw_value IS NOT NULL"
+                ), {"src": src}).fetchall()
             vals = [r[0] for r in rows]
             if len(vals) < MIN_OBSERVATIONS:
                 source_ranges[src] = None
@@ -90,14 +113,17 @@ def run(db=None):
         for district_id, occupation_id in combos:
             # Load signals grouped by source
             rows = db.execute(text("""
-                SELECT source_name, month, raw_value FROM demand_signals
+                SELECT source_name, month, raw_value, provenance FROM demand_signals
                 WHERE district_id=:did AND occupation_id=:oid
                 ORDER BY month
             """), {"did": district_id, "oid": occupation_id}).fetchall()
 
             # Organise into month -> source -> value
             month_data: dict[str, dict[str, float | None]] = {}
-            for src, month, val in rows:
+            for src, month, val, provenance in rows:
+                required_provenance = live_provenance.get(src)
+                if required_provenance and provenance != required_provenance:
+                    continue
                 if month not in month_data:
                     month_data[month] = {}
                 month_data[month][src] = val

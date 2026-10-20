@@ -12,12 +12,18 @@ from auth import get_current_user
 router = APIRouter(prefix="/api", tags=["recommendations"])
 
 
-def _fetch_recs(db, district_id, occupation_id, action_type, limit):
+def _fetch_recs(db, state_id, district_id, sector_id, occupation_id, action_type, limit):
     conditions = ["1=1"]
     params = {"lim": limit}
+    if state_id:
+        conditions.append("d.state_id=:state_id")
+        params["state_id"] = state_id
     if district_id:
         conditions.append("r.district_id=:district_id")
         params["district_id"] = district_id
+    if sector_id:
+        conditions.append("o.sector_id=:sector_id")
+        params["sector_id"] = sector_id
     if occupation_id:
         conditions.append("r.occupation_id=:occupation_id")
         params["occupation_id"] = occupation_id
@@ -45,14 +51,16 @@ def _fetch_recs(db, district_id, occupation_id, action_type, limit):
 
 @router.get("/recommendations", summary="List planning recommendations")
 def list_recommendations(
+    state_id: int = Query(None),
     district_id: int = Query(None),
+    sector_id: int = Query(None),
     occupation_id: int = Query(None),
     action_type: str = Query(None, enum=["increase_seats", "reduce_seats", "reallocate", "new_course", "curriculum_review"]),
     limit: int = Query(100, le=500),
     db: Session = Depends(get_db),
     _=Depends(get_current_user),
 ):
-    rows = _fetch_recs(db, district_id, occupation_id, action_type, limit)
+    rows = _fetch_recs(db, state_id, district_id, sector_id, occupation_id, action_type, limit)
     return {
         "count": len(rows),
         "data_status": "synthetic-demo",
@@ -78,11 +86,12 @@ def list_recommendations(
 
 @router.get("/recommendations/export.csv", summary="Export recommendations as target-setting CSV")
 def export_recommendations_csv(
+    state_id: int = Query(None),
     district_id: int = Query(None),
     db: Session = Depends(get_db),
     _=Depends(get_current_user),
 ):
-    rows = _fetch_recs(db, district_id, None, None, 10000)
+    rows = _fetch_recs(db, state_id, district_id, None, None, None, 10000)
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([

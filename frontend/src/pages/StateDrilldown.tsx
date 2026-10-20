@@ -62,8 +62,8 @@ export default function StateDrilldown() {
       gap: Math.round(item.forecast_demand - item.forecast_supply),
       gapPercent: Math.round(item.gap_pct * 10) / 10,
       severity: (item.gap_band as SeverityBand) || "Balanced",
-      nsqfLevel: 4,
-      isAspirational: false,
+      nsqfLevel: item.nsqf_level ?? 0,
+      isAspirational: Boolean(item.is_aspirational),
     }));
   } else {
     rows = mockGapRows.filter((r) => r.stateId === stateId);

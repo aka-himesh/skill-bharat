@@ -1,4 +1,4 @@
-"""
+﻿"""
 news.py — News provider abstraction for AI-LMIS.
 
 Provider priority: NEWS_PROVIDER env → fallback to rss → bundled seed file.
@@ -195,7 +195,7 @@ class RssProvider(NewsProvider):
                         "image_url": None,
                     })
             except Exception as e:
-                logger.warning("[news/rss] Feed error %s: %s", feed_url[:60], e)
+                logger.warning("[news/rss] Feed request failed (%s).", type(e).__name__)
         return items
 
 
@@ -233,6 +233,6 @@ def get_provider() -> NewsProvider:
                 logger.info("[news] Provider %s returned %d raw items", provider.name, len(items))
                 return provider
         except Exception as e:
-            logger.warning("[news] Provider %s failed: %s — trying next", provider.name, e)
+            logger.warning("[news] Provider %s failed (%s); trying next", provider.name, type(e).__name__)
 
     return SeedProvider()
