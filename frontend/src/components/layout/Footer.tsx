@@ -1,4 +1,4 @@
-﻿import { useConfig } from "../../context/ConfigContext";
+import { useConfig } from "../../context/ConfigContext";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -41,15 +41,17 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <div style={{ color: "#fff", fontWeight: 600, marginBottom: 8, fontSize: 13 }}>Data Notice</div>
-            <div style={{ fontSize: 11, lineHeight: 1.6, color: "#6a7d95" }}>
-              Dashboard demand, gap and forecast indicators are synthetic demonstration data. External source status is reported separately below.
+            <div style={{ color: "#fff", fontWeight: 600, marginBottom: 8, fontSize: 13 }}>Data Sources</div>
+            <div style={{ fontSize: 11, lineHeight: 1.7, color: "#8a9db5" }}>
+              <div><span style={{ color: "#cce0f7", fontWeight: 600 }}>e-Shram</span> — Unorganised worker registrations sourced from <a href="https://data.gov.in" target="_blank" rel="noopener noreferrer" style={{ color: "#8abedc", textDecoration: "none" }}>data.gov.in</a> (2025 dataset)</div>
+              <div style={{ marginTop: 4 }}><span style={{ color: "#cce0f7", fontWeight: 600 }}>NCS</span> — Job vacancy data referenced from the National Career Service portal</div>
+              <div style={{ marginTop: 4 }}><span style={{ color: "#cce0f7", fontWeight: 600 }}>PLFS</span> — Labour force participation &amp; employment gap analysis via Periodic Labour Force Survey</div>
+              <div style={{ marginTop: 4 }}><span style={{ color: "#cce0f7", fontWeight: 600 }}>e-Sankhyiki</span> — Statistical indicators sourced from the MoSPI e-Sankhyiki API</div>
             </div>
           </div>
         </div>
-        <div style={{ borderTop: "1px solid #2a3a50", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ borderTop: "1px solid #2a3a50", paddingTop: 12, display: "flex", justifyContent: "center", alignItems: "center" }}>
           <div style={{ fontSize: 11 }}>© {year} AI-LMIS · Built for Ministry of Skill Development &amp; Entrepreneurship</div>
-          <div style={{ fontSize: 11 }}>{t("common.lastUpdated")}: <span style={{ color: "#f5a623" }}>{config.dataStatusLabel || "Source status unavailable"}</span></div>
         </div>
       </div>
     </footer>

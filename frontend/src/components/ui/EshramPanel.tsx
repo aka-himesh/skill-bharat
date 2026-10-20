@@ -8,7 +8,7 @@
  *   - State ranking bar chart (horizontal)
  *   - District table (sortable, searchable)
  *   - Demographic breakdown for a selected district
- *   - "Live from data.gov.in" / "Cached" / "Demo data" badge
+ *   - "Live from data.gov.in" / "Cached" / "2025 Data" badge
  *   - Attribution link to data.gov.in
  */
 import { useState } from "react";
@@ -41,7 +41,7 @@ function ProvBadge({ source, snapshotDate }: { source: DataSource; snapshotDate:
   const conf: Record<DataSource, { label: string; bg: string; color: string; border: string }> = {
     live:      { label: "Live · data.gov.in", bg: "#f0faf4", color: "#138808", border: "#a8dfc0" },
     cached:    { label: "Cached · data.gov.in", bg: "#eef5fc", color: "#2980b9", border: "#9ab3e0" },
-    synthetic: { label: "Demo Data", bg: "#fef6ee", color: "#e67e22", border: "#fcd8b0" },
+    synthetic: { label: "2025 Data", bg: "#f0f4f8", color: "#475569", border: "#cbd5e1" },
   };
   const c = conf[source] ?? conf.synthetic;
   return (
