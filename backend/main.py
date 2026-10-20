@@ -165,9 +165,11 @@ cors_origins = [
     f"http://127.0.0.1:{settings.FRONTEND_PORT}",
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://skill-bharat-ofjm.vercel.app",
+    "https://skill-bharat.onrender.com",
 ]
-if os.getenv("VERCEL"):
-    cors_origins = ["*"]
+
+cors_origin_regex = r"https://.*\.vercel\.app|https://.*\.onrender\.com|http://localhost:\d+|http://127\.0\.0\.1:\d+"
 
 @app.middleware("http")
 async def normalize_vercel_rewrites(request, call_next):
@@ -184,6 +186,7 @@ async def normalize_vercel_rewrites(request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

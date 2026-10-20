@@ -30,8 +30,23 @@ export function isAuthenticated(): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Base fetch wrapper
+// Base fetch wrapper & URL resolution
 // ---------------------------------------------------------------------------
+
+export const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    ? ""
+    : "https://skill-bharat.onrender.com")
+).replace(/\/+$/, "");
+
+export function resolveUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return API_BASE_URL ? `${API_BASE_URL}${cleanPath}` : cleanPath;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -59,12 +74,14 @@ async function apiFetch<T>(
     ...(options.headers as Record<string, string> ?? {}),
   };
 
+  const fullUrl = resolveUrl(path);
+
   if (!isPublic) {
     let token = getToken();
     // Auto-login with demo credentials if no token exists yet
     if (!token && !isRetry) {
       try {
-        const loginRes = await fetch("/api/auth/login", {
+        const loginRes = await fetch(resolveUrl("/api/auth/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pin: "26246", password: "zeroone" }),
@@ -82,12 +99,12 @@ async function apiFetch<T>(
     }
   }
 
-  const res = await fetch(path, { ...options, headers });
+  const res = await fetch(fullUrl, { ...options, headers });
 
   if (res.status === 401 && !isPublic && !isRetry) {
     // Session expired or token invalid — re-authenticate with demo credentials and retry once
     try {
-      const loginRes = await fetch("/api/auth/login", {
+      const loginRes = await fetch(resolveUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin: "26246", password: "zeroone" }),
@@ -616,7 +633,7 @@ export async function downloadAuthenticatedCsv(url: string, filename: string): P
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(url, { headers });
+  const res = await fetch(resolveUrl(url), { headers });
   if (!res.ok) {
     throw new ApiError(res.status, `Failed to download: ${res.statusText}`);
   }
