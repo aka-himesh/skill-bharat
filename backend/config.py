@@ -92,12 +92,26 @@ class Settings:
                     Path("/var/task/backend/data/lmis.db"),
                     Path("/var/task/data/lmis.db"),
                 ]
+                copied = False
                 for cand in candidates:
                     if cand.is_file() and cand.stat().st_size > 0:
                         import shutil
                         tmp_db.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy2(cand, tmp_db)
+                        copied = True
                         break
+                if not copied:
+                    for s_root in [cur, cur.parent, Path.cwd(), Path("/var/task")]:
+                        if s_root.exists():
+                            for found in s_root.glob("**/lmis.db"):
+                                if found.is_file() and found.stat().st_size > 0 and found != tmp_db:
+                                    import shutil
+                                    tmp_db.parent.mkdir(parents=True, exist_ok=True)
+                                    shutil.copy2(found, tmp_db)
+                                    copied = True
+                                    break
+                        if copied:
+                            break
             return f"sqlite:///{tmp_db.as_posix()}"
 
         p = Path(self.DB_PATH)

@@ -169,6 +169,18 @@ cors_origins = [
 if os.getenv("VERCEL"):
     cors_origins = ["*"]
 
+@app.middleware("http")
+async def normalize_vercel_rewrites(request, call_next):
+    """Ensure requests rewritten to /api/index.py or /api/index map to correct FastAPI routes."""
+    path = request.scope.get("path", "")
+    for prefix in ("/api/index.py", "/api/index"):
+        if path.startswith(prefix):
+            remainder = path[len(prefix):]
+            request.scope["path"] = remainder if remainder.startswith("/") else "/" + remainder
+            break
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
