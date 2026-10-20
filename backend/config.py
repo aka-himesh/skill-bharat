@@ -17,20 +17,22 @@ load_dotenv(_ROOT / ".env", override=False)
 
 
 def _optional_int(name: str, default: int, minimum: int = 0) -> int:
-    raw = os.getenv(name, str(default)).strip()
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
     try:
         value = int(raw)
-    except ValueError as exc:
-        raise ValueError(f"{name} must be an integer") from exc
+    except (ValueError, TypeError):
+        return default
     if value < minimum:
-        raise ValueError(f"{name} must be >= {minimum}")
+        return default
     return value
 
 
 def _base_url(name: str, default: str = "") -> str:
     value = os.getenv(name, default).strip().rstrip("/")
     if value and not value.startswith(("https://", "http://")):
-        raise ValueError(f"{name} must be an http(s) URL")
+        return default
     return value
 
 
@@ -41,8 +43,8 @@ class Settings:
         "APP_TAGLINE", "AI-Enabled Labour Market Intelligence System"
     )
     DB_PATH: str = os.getenv("DB_PATH", "backend/data/lmis.db")
-    BACKEND_PORT: int = int(os.getenv("BACKEND_PORT", "8000"))
-    FRONTEND_PORT: int = int(os.getenv("FRONTEND_PORT", "5173"))
+    BACKEND_PORT: int = _optional_int("BACKEND_PORT", 8000)
+    FRONTEND_PORT: int = _optional_int("FRONTEND_PORT", 5173)
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
     ACCESS_PIN: str = os.getenv("ACCESS_PIN", "26246")
     ACCESS_PASSWORD: str = os.getenv("ACCESS_PASSWORD", "zeroone")
@@ -67,14 +69,14 @@ class Settings:
     # data.gov.in / e-Shram
     ESHRAM_RESOURCE_ID: str = os.getenv("ESHRAM_RESOURCE_ID", "").strip()
     DATAGOV_BASE_URL: str = _base_url("DATAGOV_BASE_URL", "https://api.data.gov.in/resource")
-    ESHRAM_CACHE_TTL_HOURS: int = int(os.getenv("ESHRAM_CACHE_TTL_HOURS", "24"))
+    ESHRAM_CACHE_TTL_HOURS: int = _optional_int("ESHRAM_CACHE_TTL_HOURS", 24)
 
     # News
     NEWS_PROVIDER: str = os.getenv("NEWS_PROVIDER", "rss")
     NEWS_API_KEY: str = os.getenv("NEWS_API_KEY", "")
-    NEWS_CACHE_TTL_MINUTES: int = int(os.getenv("NEWS_CACHE_TTL_MINUTES", "30"))
-    NEWS_MAX_ITEMS: int = int(os.getenv("NEWS_MAX_ITEMS", "12"))
-    NEWS_MIN_SCORE: int = int(os.getenv("NEWS_MIN_SCORE", "1"))
+    NEWS_CACHE_TTL_MINUTES: int = _optional_int("NEWS_CACHE_TTL_MINUTES", 30)
+    NEWS_MAX_ITEMS: int = _optional_int("NEWS_MAX_ITEMS", 12)
+    NEWS_MIN_SCORE: int = _optional_int("NEWS_MIN_SCORE", 1)
 
     # Resolved absolute DB path
     @property
