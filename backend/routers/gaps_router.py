@@ -65,7 +65,7 @@ def _build_gaps_query(level, state_id, district_id, sector_id, occupation_id, ho
 
 @router.get("/gaps", summary="Demand-supply gap scores with filters")
 def get_gaps(
-    level: str = Query("national", enum=["national", "state", "district"]),
+    level: str = Query("national", description="Level: national, state, district"),
     state_id: int = Query(None),
     district_id: int = Query(None),
     sector_id: int = Query(None),
@@ -101,7 +101,7 @@ def get_gaps(
 
 @router.get("/ranking", summary="Top shortage or oversupply district-occupation pairs")
 def get_ranking(
-    type: str = Query("shortage", enum=["shortage", "oversupply"]),
+    type: str = Query("shortage", description="Ranking type: shortage or oversupply"),
     limit: int = Query(10, ge=1, le=50),
     state_id: int = Query(None),
     district_id: int = Query(None),

@@ -55,7 +55,7 @@ def list_recommendations(
     district_id: int = Query(None),
     sector_id: int = Query(None),
     occupation_id: int = Query(None),
-    action_type: str = Query(None, enum=["increase_seats", "reduce_seats", "reallocate", "new_course", "curriculum_review"]),
+    action_type: str = Query(None, description="Action type filter"),
     limit: int = Query(100, le=500),
     db: Session = Depends(get_db),
     _=Depends(get_current_user),
