@@ -1,3 +1,4 @@
+
 """
 config.py — Central configuration loader for AI-LMIS backend.
 
@@ -78,6 +79,27 @@ class Settings:
     # Resolved absolute DB path
     @property
     def DB_URL(self) -> str:
+        if os.getenv("VERCEL"):
+            tmp_db = Path("/tmp/lmis.db")
+            if not tmp_db.exists() or tmp_db.stat().st_size == 0:
+                cur = Path(__file__).resolve().parent
+                candidates = [
+                    cur / "data" / "lmis.db",
+                    cur.parent / "backend" / "data" / "lmis.db",
+                    cur.parent / "data" / "lmis.db",
+                    Path.cwd() / "backend" / "data" / "lmis.db",
+                    Path.cwd() / "data" / "lmis.db",
+                    Path("/var/task/backend/data/lmis.db"),
+                    Path("/var/task/data/lmis.db"),
+                ]
+                for cand in candidates:
+                    if cand.is_file() and cand.stat().st_size > 0:
+                        import shutil
+                        tmp_db.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(cand, tmp_db)
+                        break
+            return f"sqlite:///{tmp_db.as_posix()}"
+
         p = Path(self.DB_PATH)
         if not p.is_absolute():
             p = _ROOT / p

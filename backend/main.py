@@ -1,4 +1,4 @@
-﻿"""
+"""
 main.py — FastAPI application entry point for AI-LMIS.
 
 Authentication: All /api/* routes require JWT except /api/config and /api/auth/*.
@@ -101,41 +101,44 @@ async def lifespan(app: FastAPI):
     from connectors.eshram import eshram_connector
     eshram_connector.set_db(SessionLocal)
 
-    # 3. Run seed + pipeline in a background thread so startup doesn't block
-    def _seed_and_pipeline():
-        db = SessionLocal()
-        try:
-            from sqlalchemy import text
-            count = db.execute(text("SELECT COUNT(*) FROM states")).scalar()
-            if count == 0:
-                logger.info("[startup] DB empty — running seed generator...")
-                from seed.generate import run as seed_run
-                seed_run()
-                logger.info("[startup] Seed complete. Running pipeline...")
-                from pipeline.run import run_pipeline
-                run_pipeline()
-            else:
-                logger.info("[startup] DB already has %d state(s).", count)
-        except Exception as e:
-            logger.warning("[startup] Warning during seed: %s", e)
-        finally:
-            db.close()
+    is_serverless = bool(os.getenv("VERCEL"))
 
-    import threading
-    threading.Thread(target=_seed_and_pipeline, daemon=True, name="seed-thread").start()
-
-    # 4. Kick off initial e-Shram fetch in background (non-blocking)
-    if settings.eshram_live_ready:
-        def _initial_eshram():
+    if not is_serverless:
+        # 3. Run seed + pipeline in a background thread so startup doesn't block (local/server only)
+        def _seed_and_pipeline():
+            db = SessionLocal()
             try:
-                data = eshram_connector._fetch_live()
-                logger.info("[startup] Initial e-Shram: %d records", len(data.get("rows", [])))
+                from sqlalchemy import text
+                count = db.execute(text("SELECT COUNT(*) FROM states")).scalar()
+                if count == 0:
+                    logger.info("[startup] DB empty — running seed generator...")
+                    from seed.generate import run as seed_run
+                    seed_run()
+                    logger.info("[startup] Seed complete. Running pipeline...")
+                    from pipeline.run import run_pipeline
+                    run_pipeline()
+                else:
+                    logger.info("[startup] DB already has %d state(s).", count)
             except Exception as e:
-                logger.warning("[startup] e-Shram initial fetch failed (%s)", type(e).__name__)
-        threading.Thread(target=_initial_eshram, daemon=True, name="eshram-initial").start()
+                logger.warning("[startup] Warning during seed: %s", e)
+            finally:
+                db.close()
 
-    # 5. Start scheduler
-    _scheduler = _start_scheduler()
+        import threading
+        threading.Thread(target=_seed_and_pipeline, daemon=True, name="seed-thread").start()
+
+        # 4. Kick off initial e-Shram fetch in background (non-blocking)
+        if settings.eshram_live_ready:
+            def _initial_eshram():
+                try:
+                    data = eshram_connector._fetch_live()
+                    logger.info("[startup] Initial e-Shram: %d records", len(data.get("rows", [])))
+                except Exception as e:
+                    logger.warning("[startup] e-Shram initial fetch failed (%s)", type(e).__name__)
+            threading.Thread(target=_initial_eshram, daemon=True, name="eshram-initial").start()
+
+        # 5. Start scheduler
+        _scheduler = _start_scheduler()
 
     yield  # ← app runs here
 
@@ -157,14 +160,18 @@ app = FastAPI(
 )
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
+cors_origins = [
+    f"http://localhost:{settings.FRONTEND_PORT}",
+    f"http://127.0.0.1:{settings.FRONTEND_PORT}",
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+if os.getenv("VERCEL"):
+    cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        f"http://localhost:{settings.FRONTEND_PORT}",
-        f"http://127.0.0.1:{settings.FRONTEND_PORT}",
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
